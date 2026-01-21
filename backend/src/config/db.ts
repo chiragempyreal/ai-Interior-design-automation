@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const config = {
-  port: process.env.PORT || 5000,
+  port: process.env.PORT || 5001,
   mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017/interior-design-db',
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret_key',
   jwtAccessExpiration: process.env.JWT_ACCESS_EXPIRATION || '15m',

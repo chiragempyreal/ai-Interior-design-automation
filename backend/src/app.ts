@@ -11,12 +11,29 @@ import { sendSuccess, sendError } from './utils/utilHelpers';
 
 const app: Application = express();
 
+const corsOptions = {
+  origin: true, // Allow any origin
+  credentials: true, // Allow cookies/headers
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+};
+
+import path from 'path';
+
 // Middleware
-app.use(helmet());
-app.use(cors());
+app.use(cors(corsOptions));
+// app.options('*', cors(corsOptions)); // Removed to fix Express 5 / path-to-regexp error. global cors() handles OPTIONS.
+
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
 app.use(compression());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined', { stream: { write: (message) => logger.info(message.trim()) } }));
+
+// Serve Uploads
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Swagger Config
 const swaggerOptions = {
@@ -29,7 +46,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:5000',
+        url: 'http://localhost:5001',
       },
     ],
     components: {
@@ -62,8 +79,25 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // Global Error Handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   logger.error(err.stack);
+
+  // Mongoose Validation Error
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map((val: any) => val.message);
+    return sendError(res, 'Validation Error', messages, 400);
+  }
+
+  // Mongoose Cast Error (Invalid ID)
+  if (err.name === 'CastError') {
+    return sendError(res, 'Resource not found', null, 404);
+  }
+
+  // Duplicate Key Error
+  if (err.code === 11000) {
+    return sendError(res, 'Duplicate field value entered', null, 400);
+  }
+
   return sendError(res, 'Internal Server Error', err.message, 500);
 });
 

@@ -1,3 +1,31 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #4A6C5D;
+  --color-primary-dark: #3D5A4F;
+  --color-secondary: #D4A574;
+  --color-secondary-light: #E6C6A6;
+  --color-background: #F8F6F1;
+  --color-surface: #FFFFFF;
+  --color-text: #2B3E3A;
+  --color-text-secondary: #5A5A5A;
+  --color-border: #D9D6D1;
+  --color-success: #7A9A8C;
+  --color-warning: #E6A757;
+  --color-error: #C08080;
+
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Lora', serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text font-sans antialiased min-h-screen;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans font-semibold text-text;
+  }
+}
