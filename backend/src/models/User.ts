@@ -25,7 +25,8 @@ const UserSchema: Schema = new Schema(
     },
     full_name: {
       type: String,
-      required: true,
+      required: false, // Changed to false to support mobile-only signup
+      default: 'New User'
     },
     email: {
       type: String,

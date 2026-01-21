@@ -7,60 +7,15 @@ import { config } from '../config/db';
 import logger from '../utils/logger';
 import { sendSuccess, sendError, sendEmail } from '../utils/utilHelpers';
 
-/**
- * @swagger
- * tags:
- *   name: Auth
- *   description: Authentication API
- */
 
 // ... (register, login, refreshToken remain same but utilizing helpers already)
 
 // ...
 
 /**
- * @swagger
- * /api/v1/auth/forgot-password:
- *   post:
- *     summary: Request password reset
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "john@example.com"
- *     responses:
- *       200:
- *         description: Email sent
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Email sent"
- *                 data:
- *                   type: object
- *                   properties:
- *                     resetToken:
- *                       type: string
- *                       description: "Mocked token for development"
- *       404:
- *         description: User not found
- *       500:
- *         description: Server error
+ * @desc    Request password reset
+ * @route   POST /api/v1/auth/forgot-password
+ * @access  Public
  */
 export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -87,32 +42,9 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
 };
 
 /**
- * @swagger
- * /api/v1/auth/reset-password:
- *   post:
- *     summary: Reset password
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - token
- *               - newPassword
- *             properties:
- *               token:
- *                 type: string
- *               newPassword:
- *                 type: string
- *                 format: password
- *                 example: "newpassword123"
- *     responses:
- *       200:
- *         description: Password reset successful
- *       400:
- *         description: Invalid token
+ * @desc    Reset password
+ * @route   POST /api/v1/auth/reset-password
+ * @access  Public
  */
 export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -132,95 +64,132 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     }
 };
 
+/**
+ * @desc    Send OTP to phone number
+ * @route   POST /api/v1/auth/send-otp
+ * @access  Public
+ */
+export const sendOtp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) {
+      return sendError(res, 'Phone number is required', null, 400);
+    }
+    // Static OTP for now
+    return sendSuccess(res, 'OTP sent successfully. Use 123456.', { otp: '123456' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Verify OTP and Login/Register
+ * @route   POST /api/v1/auth/verify-otp
+ * @access  Public
+ */
+export const verifyOtp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, otp } = req.body;
+    if (!phone || !otp) {
+      return sendError(res, 'Phone and OTP are required', null, 400);
+    }
+
+    if (otp !== '123456') {
+      return sendError(res, 'Invalid OTP', null, 400);
+    }
+
+    let user = await authService.findUserByPhone(phone);
+    let isNewUser = false;
+
+    if (!user) {
+      // Register new user
+      isNewUser = true;
+      try {
+        user = await authService.createUser({
+          phone,
+          full_name: `User ${phone.slice(-4)}`,
+        });
+        
+        // Populate role for the new user as createUser returns the document but might not populate it immediately or depending on implementation
+        // authService.createUser returns `await User.create(userData)`.
+        // We need to populate role_id to match the expected structure for generateTokens
+        user = await user.populate('role_id');
+        
+      } catch (err) {
+        // Handle duplicate key error if race condition
+        if ((err as any).code === 11000) {
+           user = await authService.findUserByPhone(phone);
+           if (!user) throw err; // Should not happen
+        } else {
+           throw err;
+        }
+      }
+    }
+
+    if (!user) {
+        return sendError(res, 'Authentication failed', null, 500);
+    }
+
+    const tokens = authService.generateTokens(user);
+    
+    return sendSuccess(res, 'Login successful', {
+      user: {
+        _id: user._id,
+        full_name: user.full_name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role_id ? (user.role_id as any).name : 'client',
+        subscription: user.subscription,
+      },
+      ...tokens,
+      isNewUser
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Update user profile
+ * @route   PUT /api/v1/auth/profile
+ * @access  Private
+ */
+export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = (req as any).user;
+    if (!user) {
+        return sendError(res, 'User not found', null, 404);
+    }
+    
+    const { full_name, email, phone } = req.body;
+    
+    const updatedUser = await authService.updateUser(user._id, { full_name, email, phone });
+    
+    if (!updatedUser) {
+        return sendError(res, 'User not found', null, 404);
+    }
+    
+    return sendSuccess(res, 'Profile updated successfully', {
+        user: {
+            _id: updatedUser._id,
+            full_name: updatedUser.full_name,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            role: updatedUser.role_id ? (updatedUser.role_id as any).name : 'client',
+            subscription: updatedUser.subscription,
+        }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 
 /**
- * @swagger
- * /api/v1/auth/register:
- *   post:
- *     summary: Register a new user
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - full_name
- *               - phone
- *               - password
- *             properties:
- *               full_name:
- *                 type: string
- *                 example: John Doe
- *               email:
- *                 type: string
- *                 format: email
- *                 example: john@example.com
- *               phone:
- *                 type: string
- *                 example: "+1234567890"
- *               password:
- *                 type: string
- *                 format: password
- *                 example: "password123"
- *               company_name:
- *                 type: string
- *                 example: "Design Co."
- *               subscription:
- *                 type: string
- *                 enum: [free, pro, enterprise]
- *                 default: free
- *                 example: free
- *     responses:
- *       201:
- *         description: User registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   type: object
- *                   properties:
- *                     _id:
- *                       type: string
- *                       example: 60d0fe4f5311236168a109ca
- *                     full_name:
- *                       type: string
- *                       example: John Doe
- *                     email:
- *                       type: string
- *                       example: john@example.com
- *                     phone:
- *                       type: string
- *                       example: "+1234567890"
- *                     subscription:
- *                       type: string
- *                       example: free
- *                     role_id:
- *                       type: string
- *                       example: 60d0fe4f5311236168a109cb
- *                 tokens:
- *                   type: object
- *                   properties:
- *                     accessToken:
- *                       type: string
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *                     refreshToken:
- *                       type: string
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *       400:
- *         description: Validation error or phone already in use
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Phone number already in use
+ * @desc    Register a new user
+ * @route   POST /api/v1/auth/register
+ * @access  Public
  */
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -244,82 +213,9 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
 };
 
 /**
- * @swagger
- * /api/v1/auth/login:
- *   post:
- *     summary: Login user using phone number
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - phone
- *               - password
- *             properties:
- *               phone:
- *                 type: string
- *                 example: "+1234567890"
- *               password:
- *                 type: string
- *                 format: password
- *                 example: "password123"
- *     responses:
- *       200:
- *         description: Login successful
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 user:
- *                   type: object
- *                   properties:
- *                     _id:
- *                       type: string
- *                       example: 60d0fe4f5311236168a109ca
- *                     full_name:
- *                       type: string
- *                       example: John Doe
- *                     email:
- *                       type: string
- *                       example: john@example.com
- *                     phone:
- *                       type: string
- *                       example: "+1234567890"
- *                     subscription:
- *                       type: string
- *                       example: free
- *                     role_id:
- *                       type: object
- *                       properties:
- *                         _id:
- *                           type: string
- *                           example: 60d0fe4f5311236168a109cb
- *                         name:
- *                           type: string
- *                           example: client
- *                 tokens:
- *                   type: object
- *                   properties:
- *                     accessToken:
- *                       type: string
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *                     refreshToken:
- *                       type: string
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *       401:
- *         description: Invalid credentials
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Invalid credentials
+ * @desc    Login user using phone number
+ * @route   POST /api/v1/auth/login
+ * @access  Public
  */
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -346,60 +242,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 };
 
 /**
- * @swagger
- * /api/v1/auth/refresh-token:
- *   post:
- *     summary: Refresh access token
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - refreshToken
- *             properties:
- *               refreshToken:
- *                 type: string
- *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *     responses:
- *       200:
- *         description: Token refreshed
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 tokens:
- *                   type: object
- *                   properties:
- *                     accessToken:
- *                       type: string
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *                     refreshToken:
- *                       type: string
- *                       example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *       400:
- *         description: Missing refresh token
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "refreshToken is required"
- *       401:
- *         description: Invalid refresh token
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Invalid refresh token"
+ * @desc    Refresh access token
+ * @route   POST /api/v1/auth/refresh-token
+ * @access  Public
  */
 export const refreshToken = async (req: Request, res: Response, next: NextFunction) => {
     try {

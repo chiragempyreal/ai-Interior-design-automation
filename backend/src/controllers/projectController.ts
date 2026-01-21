@@ -1,9 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import OpenAI from 'openai';
 import Project from '../models/Project';
+import Quote from '../models/Quote';
+import CostConfig from '../models/CostConfig';
 import logger from '../utils/logger';
 import { sendSuccess, sendError } from '../utils/utilHelpers';
-import { generateInteriorDesignPrompt } from '../utils/aiPrompts';
+import { generateInteriorDesignPrompt, generateAnalysisPrompt } from '../utils/aiPrompts';
 
 // Helper to delay for mock AI generation
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -254,31 +256,144 @@ export const generateAIPreview = async (req: Request, res: Response, next: NextF
     console.log('optimizedPrompt', optimizedPrompt);
     // 2. Generate Image using DALL-E 2 with the optimized prompt
     // Use the already initialized client
-    const response = await openai.images.generate({
+    
+    // START: PARALLEL GENERATION (Image + Smart Analysis)
+    const imagePromise = openai.images.generate({
       model: "dall-e-2", // Optimized for cost
       prompt: optimizedPrompt.substring(0, 1000), // Ensure limit
       n: 1,
       size: "1024x1024",
     });
 
-    console.log('OpenAI Response:', response);
+    const analysisPrompt = generateAnalysisPrompt({
+      style,
+      space,
+      projectType: type,
+      colors,
+      materials: [flooring, walls, furniture, lighting].join(', '),
+      area: project.area
+    });
 
-    if (!response || !response.data) {
-      throw new Error('No response from OpenAI');
+    const analysisPromise = openai.chat.completions.create({
+      messages: [{ role: 'system', content: analysisPrompt }],
+      model: 'gpt-3.5-turbo',
+      temperature: 0.7,
+      response_format: { type: "json_object" }
+    });
+
+    const [imageResponse, analysisResponse] = await Promise.all([imagePromise, analysisPromise]);
+
+    // Process Image
+    console.log('OpenAI Response:', imageResponse);
+    if (!imageResponse || !imageResponse.data) {
+      throw new Error('No response from OpenAI Image Generation');
     }
-    const imageUrl = response.data[0].url;
-    
+    const imageUrl = imageResponse.data[0].url;
     if (!imageUrl) {
       throw new Error('Failed to generate image URL from OpenAI');
     }
-    
+
+    // Process Analysis & Create Quote
+    let analysisData: any = {};
+    let totalEstimatedCost = 0;
+
+    try {
+      const content = analysisResponse.choices[0].message.content;
+      if (content) {
+        analysisData = JSON.parse(content);
+        
+        // Calculate Costs based on CostConfig
+        const quoteItems = [];
+        
+        // Fetch all active cost configs
+        const costConfigs = await CostConfig.find({ isActive: true });
+        
+        if (analysisData.items && Array.isArray(analysisData.items)) {
+          for (const item of analysisData.items) {
+            // Find matching config or default
+            const config = costConfigs.find(c => 
+              c.itemType.toLowerCase() === item.itemType.toLowerCase() || 
+              c.category.toLowerCase() === item.category.toLowerCase()
+            );
+            
+            const basePrice = config ? config.basePrice : 50; // Fallback price
+            const laborCost = config ? config.laborCostPerUnit : 10;
+            const unitPrice = basePrice + laborCost;
+            const quantity = item.quantity || 1;
+            const totalPrice = unitPrice * quantity;
+            
+            totalEstimatedCost += totalPrice;
+            
+            quoteItems.push({
+              name: item.itemType,
+              category: item.category,
+              quantity: quantity,
+              unitPrice: unitPrice,
+              totalPrice: totalPrice
+            });
+          }
+
+          // Create Quote
+          if (quoteItems.length > 0) {
+            await Quote.create({
+              project: project._id as any,
+              items: quoteItems,
+              totalAmount: totalEstimatedCost,
+              status: 'draft',
+              validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+            });
+          }
+        }
+      }
+    } catch (parseError) {
+      logger.error(`Failed to parse analysis JSON: ${parseError}`);
+      // Continue without crashing, just missing analysis
+    }
+
     project.aiPreviewUrl = imageUrl;
     project.status = 'under_review';
+    project.aiDesignAnalysis = {
+      rationale: analysisData.rationale || 'AI Analysis pending...',
+      styleNotes: `Designed in ${style} style with ${colors} accents.`,
+      colorPaletteExplanation: colors,
+      estimatedCostRange: totalEstimatedCost > 0 
+        ? `₹${Math.round(totalEstimatedCost * 0.9).toLocaleString('en-IN')} - ₹${Math.round(totalEstimatedCost * 1.1).toLocaleString('en-IN')}`
+        : 'Calculated in Quote'
+    };
+    
+    // Process ROI Analysis
+    if (analysisData.roi && totalEstimatedCost > 0) {
+      const multiplier = analysisData.roi.valueIncreaseMultiplier || 1.2;
+      const estimatedIncrease = totalEstimatedCost * multiplier;
+      
+      project.roiAnalysis = {
+        estimatedIncreaseInValue: Math.round(estimatedIncrease),
+        roiPercentage: Math.round((multiplier - 1) * 100),
+        investmentScore: analysisData.roi.investmentScore || 7,
+        marketTrendAlignment: analysisData.roi.marketTrendAlignment || 'Stable'
+      };
+    }
+    
+    // Process Design DNA
+    if (analysisData.designDNA) {
+      project.designDNA = {
+        personaName: analysisData.designDNA.personaName,
+        personalityTraits: analysisData.designDNA.personalityTraits,
+        colorPsychology: analysisData.designDNA.colorPsychology,
+        recommendedScent: analysisData.designDNA.recommendedScent,
+        playlistVibe: analysisData.designDNA.playlistVibe,
+        colorPalette: analysisData.designDNA.colorPalette
+      };
+    }
+    
     await project.save();
 
-    return sendSuccess(res, 'AI Preview generated successfully', { 
+    return sendSuccess(res, 'AI Preview and Analysis generated successfully', { 
       previewUrl: imageUrl,
       originalUrl: project.photos?.[0] || '',
+      analysis: project.aiDesignAnalysis,
+      roi: project.roiAnalysis,
+      designDNA: project.designDNA,
       isMock: false
     });
 

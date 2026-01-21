@@ -42,7 +42,7 @@ const swaggerOptions = {
     info: {
       title: 'AI Interior Design API',
       version: '1.0.0',
-      description: 'API for Interior Design Automation and Auto Quote System',
+      description: 'API for Interior Design Automation and Auto Quote System. Supports Web and Mobile Applications.',
     },
     servers: [
       {
@@ -64,7 +64,7 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ['./src/routes/*.ts', './src/controllers/*.ts'],
+  apis: ['./src/routes/*.ts'],
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);

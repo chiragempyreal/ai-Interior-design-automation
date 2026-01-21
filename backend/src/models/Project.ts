@@ -40,6 +40,28 @@ export interface IProject extends Document {
   // Media
   photos?: string[]; // URLs
   aiPreviewUrl?: string; // Generated AI image URL
+  aiDesignAnalysis?: {
+    rationale?: string;
+    styleNotes?: string;
+    colorPaletteExplanation?: string;
+    estimatedCostRange?: string;
+  };
+
+  roiAnalysis?: {
+    estimatedIncreaseInValue?: number;
+    roiPercentage?: number;
+    investmentScore?: number;
+    marketTrendAlignment?: string;
+  };
+
+  designDNA?: {
+    personaName?: string;
+    personalityTraits?: string[];
+    colorPsychology?: string;
+    recommendedScent?: string;
+    playlistVibe?: string;
+    colorPalette?: Array<{ name: string; hex: string; mood: string }>;
+  };
   
   status: 'draft' | 'submitted' | 'under_review' | 'quoted' | 'approved' | 'completed';
   
@@ -87,8 +109,31 @@ const ProjectSchema: Schema = new Schema(
       lighting: String
     },
 
+    // Media
     photos: [String],
     aiPreviewUrl: String,
+    aiDesignAnalysis: {
+      rationale: String,
+      styleNotes: String,
+      colorPaletteExplanation: String,
+      estimatedCostRange: String
+    },
+
+    roiAnalysis: {
+      estimatedIncreaseInValue: Number,
+      roiPercentage: Number,
+      investmentScore: Number,
+      marketTrendAlignment: String
+    },
+
+    designDNA: {
+      personaName: String,
+      personalityTraits: [String],
+      colorPsychology: String,
+      recommendedScent: String,
+      playlistVibe: String,
+      colorPalette: [{ name: String, hex: String, mood: String }]
+    },
 
     status: {
       type: String,

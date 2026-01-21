@@ -89,3 +89,7 @@ export const resetPassword = async (resetToken: string, newPassword: string) => 
 
   return user;
 };
+
+export const updateUser = async (userId: string, updates: Partial<IUser>) => {
+  return await User.findByIdAndUpdate(userId, updates, { new: true }).populate('role_id');
+};

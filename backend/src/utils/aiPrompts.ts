@@ -115,3 +115,66 @@ export const generateInteriorDesignPrompt = (data: {
     .replace('{{FURNITURE}}', data.furniture)
     .replace('{{LIGHTING}}', data.lighting);
 };
+
+export const generateAnalysisPrompt = (data: {
+  style: string;
+  space: string;
+  projectType: string;
+  colors: string;
+  materials: string;
+  area?: number;
+}) => {
+  const area = data.area || 200;
+  return `
+    You are an expert Quantity Surveyor and Interior Architect.
+    
+    Analyze the following design request and provide a JSON output containing a design rationale and an estimated bill of quantities.
+
+    CONTEXT:
+    Space: ${data.space} (${data.projectType})
+    Area: ${area} sqft
+    Style: ${data.style}
+    Colors: ${data.colors}
+    Materials specified: ${data.materials}
+
+    TASK:
+    1. Write a short, professional "Design Rationale" (max 50 words) explaining why this design works.
+    2. Estimate the required materials based on the provided area of ${area} sqft.
+    3. Categorize items into: 'Flooring', 'Wall', 'Furniture', 'Lighting'.
+    4. Act as a Real Estate Valuation Expert: Estimate the "Return on Investment" (ROI) potential.
+    5. Act as a Design Psychologist: Create a "Design Persona" for the user.
+       - Give them a cool Persona Name (e.g., "The Urban Zen Master", "The Minimalist Poet").
+       - Explain the "Color Psychology" of the chosen palette (e.g., "Blue promotes focus and calm").
+       - Suggest a "Vibe Playlist" (e.g., "Lo-Fi Jazz & Rain") and a "Signature Scent" (e.g., "Sandalwood & Bergamot").
+       - Extract the 3 main colors with Hex Codes.
+    
+    OUTPUT FORMAT (Strict JSON):
+    {
+      "rationale": "The design uses...",
+      "items": [
+        { "category": "Flooring", "itemType": "Hardwood Oak", "quantity": ${area}, "unit": "sqft" },
+        { "category": "Wall", "itemType": "Premium Paint", "quantity": ${area * 3}, "unit": "sqft" }
+      ],
+      "roi": {
+        "valueIncreaseMultiplier": 1.5,
+        "investmentScore": 8.5,
+        "marketTrendAlignment": "Highly desirable for urban rentals"
+      },
+      "designDNA": {
+        "personaName": "The Urban Zen Master",
+        "personalityTraits": ["Calm", "Organized", "Sophisticated"],
+        "colorPsychology": "The use of beige and soft grey creates a sanctuary for mental clarity.",
+        "recommendedScent": "White Tea & Thyme",
+        "playlistVibe": "Acoustic Coffee House",
+        "colorPalette": [
+          { "name": "Soft Beige", "hex": "#F5F5DC", "mood": "Warmth" },
+          { "name": "Slate Grey", "hex": "#708090", "mood": "Balance" },
+          { "name": "Charcoal", "hex": "#36454F", "mood": "Depth" }
+        ]
+      }
+    }
+    
+    Note: For 'itemType', use generic standard names like 'Hardwood Oak', 'Ceramic Tile', 'Premium Paint', 'Wallpaper'.
+    Note: 'valueIncreaseMultiplier' should be a decimal (e.g., 1.2 means value increases by 1.2x the cost of renovation).
+  `;
+};
