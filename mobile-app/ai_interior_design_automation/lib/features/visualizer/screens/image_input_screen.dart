@@ -1,15 +1,18 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+
 import '../../../core/constants/brand_colors.dart';
 import '../../project/models/project_model.dart';
 
 class ImageInputScreen extends StatefulWidget {
   final ProjectModel? project;
+  final ImageSource? autoPickSource;
 
-  const ImageInputScreen({super.key, this.project});
+  const ImageInputScreen({super.key, this.project, this.autoPickSource});
 
   @override
   State<ImageInputScreen> createState() => _ImageInputScreenState();
@@ -20,6 +23,16 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   bool _isGenerating = false;
   final _aiPromptController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.autoPickSource != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pickImage(widget.autoPickSource!);
+      });
+    }
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -52,33 +65,32 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
 
     try {
       // Simulate/Call AI Generation
-      // In a real flow, we'd pass a placeholder file or byte array 
+      // In a real flow, we'd pass a placeholder file or byte array
       // representing the generated image from the service.
       // For now, using the service to "process" (simulated in service).
       // We need a dummy file to pass to the current service signature or update service.
       // Assuming service returns a path or URL.
-      
+
       // Temporary hack: Just simulate success for UI flow if service needs a file input
       // Ideally, the service should accept a prompt and return a path/url.
-      
+
       // Let's assume we want to mock a generated result for the hackathon data flow
       await Future.delayed(const Duration(seconds: 3));
-      
+
       // Ideally we get a path back. For consistent API, let's say we succeeded.
       // In a real partial implementation, we might not have a file yet.
       // We will show a success message.
-      
+
       if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("AI Image Generated! (Mock)"),
             backgroundColor: BrandColors.success,
           ),
         );
-         // For now, we don't set _selectedImage unless we possess a real asset path
-         // In production, we'd download the generated image to a temp file.
+        // For now, we don't set _selectedImage unless we possess a real asset path
+        // In production, we'd download the generated image to a temp file.
       }
-      
     } catch (e) {
       _showError("AI Generation failed: $e");
     } finally {
@@ -101,18 +113,19 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   }
 
   void _continue() {
-    if (_selectedImage == null && !_isGenerating) { // Allow continue if testing without image or handle logic
-       // Ideally require image. Logic:
-       // if (_selectedImage == null) return _showError("Please select or generate an image.");
+    if (_selectedImage == null && !_isGenerating) {
+      // Allow continue if testing without image or handle logic
+      // Ideally require image. Logic:
+      // if (_selectedImage == null) return _showError("Please select or generate an image.");
     }
 
     // Navigate to Scope Generator
     // Pass the project and the image path
     // If we have a project passed in, use it. Otherwise rely on provider/state.
     if (widget.project != null) {
-       // We might want to attach the image path to the project model if it supported it, 
-       // or pass it along as extra data.
-       context.push('/generate-scope', extra: widget.project); 
+      // We might want to attach the image path to the project model if it supported it,
+      // or pass it along as extra data.
+      context.push('/generate-scope', extra: widget.project);
     } else {
       context.pop(); // Fallback
     }
@@ -120,6 +133,14 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Only show the source button if allowed (or all if not specified)
+    final showGallery =
+        widget.autoPickSource == null ||
+        widget.autoPickSource == ImageSource.gallery;
+    final showCamera =
+        widget.autoPickSource == null ||
+        widget.autoPickSource == ImageSource.camera;
+
     return Scaffold(
       backgroundColor: BrandColors.background,
       appBar: AppBar(
@@ -149,10 +170,7 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
             const SizedBox(height: 8),
             Text(
               "Upload a photo or let AI generate one for you.",
-              style: TextStyle(
-                color: BrandColors.textBody,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: BrandColors.textBody, fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -168,21 +186,23 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
             // Options Grid
             Row(
               children: [
-                Expanded(
-                  child: _buildOptionCard(
-                    icon: Icons.photo_library_outlined,
-                    label: "Gallery",
-                    onTap: () => _pickImage(ImageSource.gallery),
+                if (showGallery)
+                  Expanded(
+                    child: _buildOptionCard(
+                      icon: Icons.photo_library_outlined,
+                      label: "Gallery",
+                      onTap: () => _pickImage(ImageSource.gallery),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildOptionCard(
-                    icon: Icons.camera_alt_outlined,
-                    label: "Camera",
-                    onTap: () => _pickImage(ImageSource.camera),
+                if (showGallery && showCamera) const SizedBox(width: 16),
+                if (showCamera)
+                  Expanded(
+                    child: _buildOptionCard(
+                      icon: Icons.camera_alt_outlined,
+                      label: "Camera",
+                      onTap: () => _pickImage(ImageSource.camera),
+                    ),
                   ),
-                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -223,10 +243,9 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
     return Center(
       child: Container(
         height: 280,
-        width: 280,
+        width: double.infinity,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(200), // Circular
           boxShadow: BrandShadows.medium,
           border: Border.all(color: Colors.white, width: 6),
           image: DecorationImage(
@@ -237,13 +256,17 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
         child: Stack(
           children: [
             Positioned(
-              bottom: 12,
-              right: 40,
+              top: 12,
+              left: 10,
               child: CircleAvatar(
                 backgroundColor: Colors.white,
                 radius: 20,
                 child: IconButton(
-                  icon: const Icon(Icons.refresh, color: BrandColors.textDark, size: 20),
+                  icon: const Icon(
+                    Icons.refresh,
+                    color: BrandColors.textDark,
+                    size: 20,
+                  ),
                   onPressed: () {
                     setState(() => _selectedImage = null);
                   },
@@ -261,8 +284,10 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
       height: 200,
       decoration: BoxDecoration(
         color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: BrandColors.border.withOpacity(0.5), width: 2),
+        border: Border.all(
+          color: BrandColors.border.withOpacity(0.5),
+          width: 2,
+        ),
       ),
       child: Center(
         child: Icon(
@@ -314,7 +339,7 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
         gradient: LinearGradient(
           colors: [
             BrandColors.primary.withOpacity(0.05),
-             BrandColors.accent.withOpacity(0.1),
+            BrandColors.accent.withOpacity(0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -344,7 +369,8 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
             controller: _aiPromptController,
             maxLines: 2,
             decoration: InputDecoration(
-              hintText: "Describe your dream room (e.g., 'Modern minimalist living room with beige tones')...",
+              hintText:
+                  "Describe your dream room (e.g., 'Modern minimalist living room with beige tones')...",
               hintStyle: TextStyle(color: BrandColors.textHint, fontSize: 13),
               filled: true,
               fillColor: Colors.white,
@@ -374,7 +400,9 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(BrandColors.primary),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          BrandColors.primary,
+                        ),
                       ),
                     )
                   : const Text("Generate Image"),

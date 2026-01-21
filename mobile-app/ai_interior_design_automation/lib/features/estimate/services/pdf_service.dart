@@ -362,9 +362,15 @@ class PdfService {
 
   /// Print or share PDF
   Future<void> printPdf(EstimateModel estimate) async {
-    final designImage = estimate.designImageUrl != null 
-        ? await networkImage(estimate.designImageUrl!) 
-        : null;
+    dynamic designImage;
+    if (estimate.designImageUrl != null) {
+      try {
+        designImage = await networkImage(estimate.designImageUrl!);
+      } catch (e) {
+        print("Error loading PDF image: $e");
+        designImage = null;
+      }
+    }
 
     final pdf = pw.Document();
 

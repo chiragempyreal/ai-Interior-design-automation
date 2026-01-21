@@ -36,6 +36,7 @@ class ProjectModel {
     DesignPreferences? designPreferences,
     TechnicalRequirements? technicalRequirements,
     List<String>? photoPaths,
+    List<String>? inspirationPaths,
   }) {
     return ProjectModel(
       id: id,
@@ -45,7 +46,7 @@ class ProjectModel {
       designPreferences: designPreferences ?? this.designPreferences,
       technicalRequirements: technicalRequirements ?? this.technicalRequirements,
       photoPaths: photoPaths ?? this.photoPaths,
-      inspirationPaths: inspirationPaths,
+      inspirationPaths: inspirationPaths ?? this.inspirationPaths,
       createdAt: createdAt,
       status: status ?? this.status,
     );
@@ -56,27 +57,31 @@ class ClientDetails {
   final String name;
   final String email;
   final String phone;
+  final Map<String, String> contactPreferences;
 
   ClientDetails({
     required this.name,
     this.email = '',
     this.phone = '',
+    this.contactPreferences = const {},
   });
 }
 
 class PropertyDetails {
   final PropertyType type;
-  final List<String> categories; // New Construction, Renovation, etc.
-  final List<String> spaceTypes; // Living Room, Kitchen, etc.
+  final List<String> categories; 
+  final List<String> spaceTypes; 
   final String city;
   final String locality;
   final double carpetArea;
-  final String areaUnit; // sqft, sqm, sq yards
+  final String areaUnit; 
   final double ceilingHeight;
+  final String ceilingHeightUnit;
   final String lightAvailability;
   final String ventilation;
   final String currentCondition;
-  final Map<String, RoomDimensions> roomMeasurements; // Room Name -> Dimensions
+  final int numberOfRooms;
+  final Map<String, RoomDimensions> roomMeasurements; 
 
   PropertyDetails({
     required this.type,
@@ -87,9 +92,11 @@ class PropertyDetails {
     this.carpetArea = 0,
     this.areaUnit = 'sqft',
     this.ceilingHeight = 0,
+    this.ceilingHeightUnit = 'feet',
     this.lightAvailability = '',
     this.ventilation = '',
     this.currentCondition = '',
+    this.numberOfRooms = 1,
     this.roomMeasurements = const {},
   });
 }
@@ -121,23 +128,25 @@ class DesignPreferences {
 }
 
 class MaterialPreferences {
-  final String flooring;
-  final String wallFinish;
-  final String ceilingType;
+  final Map<String, String> flooring; // RoomName -> Material
+  final Map<String, String> wallFinish; // RoomName -> Finish
+  final Map<String, String> ceilingType; // RoomName -> Type
   final String furnitureStyle;
+  final Map<String, String> materialDetails; // Extra details
 
   MaterialPreferences({
-    this.flooring = '',
-    this.wallFinish = '',
-    this.ceilingType = '',
+    this.flooring = const {},
+    this.wallFinish = const {},
+    this.ceilingType = const {},
     this.furnitureStyle = '',
+    this.materialDetails = const {},
   });
 }
 
 class ColorPalette {
   final List<String> primaryColors;
   final List<String> accentColors;
-  final double intensity; // 0.0 to 1.0
+  final double intensity; 
   final String notes;
 
   ColorPalette({
@@ -150,16 +159,28 @@ class ColorPalette {
 
 class TechnicalRequirements {
   final List<String> lightingTypes;
-  final String smartHomeLevel; // Fully Automated, Partially...
-  final Map<String, String> storageNeeds; // Room -> Description
+  final List<String> lightingFixtures;
+  final String smartHomeLevel; 
+  final List<String> smartIntegrations;
+  final Map<String, int> electricalPoints;
+  final String homeTheater;
+  final Map<String, String> storageNeeds; 
+  final Map<String, String> windowTreatments;
+  final List<String> amenities;
   final BudgetDetails budget;
   final TimelineDetails timeline;
-  final Map<String, String> specialRequirements; // Accessibility, Sustainability..
+  final Map<String, String> specialRequirements;
 
   TechnicalRequirements({
     this.lightingTypes = const [],
+    this.lightingFixtures = const [],
     this.smartHomeLevel = '',
+    this.smartIntegrations = const [],
+    this.electricalPoints = const {},
+    this.homeTheater = '',
     this.storageNeeds = const {},
+    this.windowTreatments = const {},
+    this.amenities = const [],
     required this.budget,
     required this.timeline,
     this.specialRequirements = const {},
@@ -168,7 +189,7 @@ class TechnicalRequirements {
 
 class BudgetDetails {
   final double totalBudget;
-  final String breakdownPreference; // Flexible, Materials-focused...
+  final String breakdownPreference; 
   final List<String> priorities;
 
   BudgetDetails({

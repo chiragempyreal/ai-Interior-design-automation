@@ -60,15 +60,35 @@ class AiScopeService {
   }
 
   String _buildScopePrompt(ProjectModel project) {
-    return '''
-Generate a detailed interior design project scope for the following:
+    final floors = project.designPreferences.materials.flooring.entries.map((e) => "${e.key}: ${e.value}").join(', ');
+    final walls = project.designPreferences.materials.wallFinish.entries.map((e) => "${e.key}: ${e.value}").join(', ');
+    final tech = project.technicalRequirements.smartHomeLevel;
+    final lights = project.technicalRequirements.lightingTypes.join(', ');
 
-Project Name: ${project.name}
-Property Type: ${project.propertyDetails.type.name.toUpperCase()}
-Carpet Area: ${project.propertyDetails.carpetArea} ${project.propertyDetails.areaUnit}
-Budget: ${project.technicalRequirements.budget.totalBudget}
+    return '''
+Generate a detailed interior design project scope for:
+
+Project: ${project.name}
+Type: ${project.propertyDetails.type.name.toUpperCase()}
+Area: ${project.propertyDetails.carpetArea} ${project.propertyDetails.areaUnit}
+Location: ${project.propertyDetails.city}
+Budget: ₹${project.technicalRequirements.budget.totalBudget} (${project.technicalRequirements.budget.breakdownPreference})
+Timeline: ${project.technicalRequirements.timeline.durationExpectation}
+Current Status: ${project.propertyDetails.currentCondition}
+
+DESIGN PREFERENCES:
 Style: ${project.designPreferences.primaryStyle}
-Client: ${project.clientDetails.name}
+Vibe: ${project.designPreferences.moods.join(', ')}
+Palette: ${project.designPreferences.palette.primaryColors.join(', ')}
+Flooring: $floors
+Walls: $walls
+Furniture Style: ${project.designPreferences.materials.furnitureStyle}
+
+TECHNICAL REQUIREMENTS:
+Lighting: $lights
+Smart Home: $tech
+Amenities: ${project.technicalRequirements.amenities.join(', ')}
+Special Notes: ${project.technicalRequirements.specialRequirements['notes'] ?? ''}
 
 Please provide a phase-wise breakdown with:
 1. Phase name and description

@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../features/splash/screens/splash_screen.dart';
 import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/project/screens/create_project_screen.dart';
@@ -32,8 +33,18 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/image-input',
       builder: (context, state) {
-        final project = state.extra as ProjectModel?;
-        return ImageInputScreen(project: project);
+        ProjectModel? project;
+        ImageSource? source;
+        
+        if (state.extra is Map) {
+          final extras = state.extra as Map<String, dynamic>;
+          project = extras['project'] as ProjectModel?;
+          source = extras['source'] as ImageSource?;
+        } else if (state.extra is ProjectModel) {
+          project = state.extra as ProjectModel;
+        }
+        
+        return ImageInputScreen(project: project, autoPickSource: source); // Passes source
       },
     ),
     GoRoute(
