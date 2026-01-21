@@ -1,8 +1,10 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../project/models/project_model.dart';
 import '../models/estimate_model.dart';
@@ -88,10 +90,7 @@ class EstimateDetailsScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    _buildHeaderInfo(
-                      "Version",
-                      "v${estimate.version}",
-                    ),
+                    _buildHeaderInfo("Version", "v${estimate.version}"),
                     const SizedBox(width: 24),
                     _buildHeaderInfo(
                       "Date",
@@ -105,90 +104,186 @@ class EstimateDetailsScreen extends StatelessWidget {
 
           // AI Design Proposal Section
           if (estimate.designImageUrl != null)
-             Container(
-               margin: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-               child: Column(
-                 crossAxisAlignment: CrossAxisAlignment.start,
-                 children: [
-                   Row(
-                     children: [
-                       const Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
-                       const SizedBox(width: 8),
-                       const Text("AI Design Proposal", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                     ],
-                   ),
-                   const SizedBox(height: 16),
-                   Row(
-                     children: [
-                       // Original
-                       if (project.photoPaths.isNotEmpty)
-                         Expanded(
-                           child: Column(
-                             children: [
-                               const Text("Original Site", style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500)),
-                               const SizedBox(height: 8),
-                               ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(File(project.photoPaths.first), height: 150, width: double.infinity, fit: BoxFit.cover)),
-                             ],
-                           ),
-                         ),
-                       if (project.photoPaths.isNotEmpty) const SizedBox(width: 16),
-                       // Generated
-                       Expanded(
-                         child: Column(
-                           children: [
-                             const Text("AI Redesigned", style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
-                             const SizedBox(height: 8),
-                             GestureDetector(
-                               onTap: () {
-                                  showDialog(context: context, builder: (context) => Dialog.fullscreen(
-                                    child: Stack(children: [
-                                       InteractiveViewer(minScale: 0.5, maxScale: 4.0, child: Center(child: Image.network(estimate.designImageUrl!))),
-                                       Positioned(top: 20, right: 20, child: FloatingActionButton(mini: true, backgroundColor: Colors.white, onPressed: () => Navigator.pop(context), child: const Icon(Icons.close, color: Colors.black))),
-                                    ]),
-                                  ));
-                               },
-                               child: ClipRRect(
-                                 borderRadius: BorderRadius.circular(12),
-                                 child: Stack(
-                                   children: [
-                                     Image.network(estimate.designImageUrl!, height: 150, width: double.infinity, fit: BoxFit.cover, errorBuilder: (c,e,s) => Container(height: 150, color: Colors.grey[200], child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)))),
-                                     Positioned(bottom: 8, right: 8, child: Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: Colors.black.withOpacity(0.7), borderRadius: BorderRadius.circular(4)), child: const Text("TAP TO VIEW", style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold))))
-                                   ],
-                                 ),
-                               ),
-                             ),
-                           ],
-                         ),
-                       ),
-                     ],
-                   ),
-                 ],
-               ),
-             ),
+            // Items List
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome,
+                              color: AppColors.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              "AI Design Proposal",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      // Original
+                      if (project.photoPaths.isNotEmpty)
+                        Expanded(
+                          child: Column(
+                            children: [
+                              const Text(
+                                "Original Site",
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.file(
+                                  File(project.photoPaths.first),
+                                  height: 150,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      if (project.photoPaths.isNotEmpty)
+                        const SizedBox(width: 16),
+                      // Generated
+                      Expanded(
+                        child: Column(
+                          children: [
+                            const Text(
+                              "AI Redesigned",
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => Dialog.fullscreen(
+                                    child: Stack(
+                                      children: [
+                                        InteractiveViewer(
+                                          minScale: 0.5,
+                                          maxScale: 4.0,
+                                          child: Center(
+                                            child: Image.network(
+                                              estimate.designImageUrl!,
+                                            ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 20,
+                                          right: 20,
+                                          child: FloatingActionButton(
+                                            mini: true,
+                                            backgroundColor: Colors.white,
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Icon(
+                                              Icons.close,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Stack(
+                                  children: [
+                                    Image.network(
+                                      estimate.designImageUrl!,
+                                      height: 150,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (c, e, s) => Container(
+                                        height: 150,
+                                        color: Colors.grey[200],
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.broken_image,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      bottom: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.7),
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "TAP TO VIEW",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Items by Category
+                  ..._buildItemsByCategory(currencyFormat),
 
-          // Items List
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                // Items by Category
-                ..._buildItemsByCategory(currencyFormat),
+                  const SizedBox(height: 24),
 
-                const SizedBox(height: 24),
+                  // Cost Summary
+                  _buildCostSummary(currencyFormat),
 
-                // Cost Summary
-                _buildCostSummary(currencyFormat),
+                  const SizedBox(height: 24),
 
-                const SizedBox(height: 24),
+                  // Explanation
+                  if (estimate.explanation != null)
+                    _buildExplanation(estimate.explanation!),
 
-                // Explanation
-                if (estimate.explanation != null)
-                  _buildExplanation(estimate.explanation!),
-
-                const SizedBox(height: 100), // Space for bottom bar
-              ],
+                  const SizedBox(height: 100), // Space for bottom bar
+                ],
+              ),
             ),
-          ),
 
           // Bottom Action Bar
           _buildBottomActionBar(context),
@@ -247,10 +342,7 @@ class EstimateDetailsScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.8),
-            fontSize: 12,
-          ),
+          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
         ),
         const SizedBox(height: 4),
         Text(
@@ -294,9 +386,7 @@ class EstimateDetailsScreen extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -397,9 +487,7 @@ class EstimateDetailsScreen extends StatelessWidget {
     return Card(
       elevation: 4,
       color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -469,20 +557,14 @@ class EstimateDetailsScreen extends StatelessWidget {
                 SizedBox(width: 8),
                 Text(
                   "Estimate Explanation",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               explanation,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.5,
-              ),
+              style: const TextStyle(fontSize: 13, height: 1.5),
             ),
           ],
         ),
@@ -589,10 +671,7 @@ class EstimateDetailsScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Error: $e"),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
         );
       }
     }
@@ -600,7 +679,8 @@ class EstimateDetailsScreen extends StatelessWidget {
 
   Future<void> _shareEstimate(BuildContext context) async {
     try {
-      final text = '''
+      final text =
+          '''
 Budget Estimate - ${project.name}
 
 Total: ₹${estimate.total.toStringAsFixed(0)}

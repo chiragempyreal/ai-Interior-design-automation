@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uuid/uuid.dart';
@@ -9,7 +10,7 @@ import '../models/estimate_model.dart';
 
 class EstimateService {
   // Get API key from environment variable
-  static String get _apiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+  static String get _apiKey => dotenv.env['GEMINI_API_KEY'] ?? 'AIzaSyCDNDZzkQhsc9fXavt_woHlv_RyFnWm_Ro';
   static const String _baseUrl =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
@@ -21,15 +22,28 @@ class EstimateService {
     required ScopeModel scope,
     required CostConfigModel costConfig,
   }) async {
-    try {
-      final prompt = _buildEstimatePrompt(project, scope, costConfig);
+    // 1. Analyze the Input Image to get Structural Context
+    String? structuralContext;
+    
+    // We prioritize using our local robust analysis over the external service to ensure
+    // the image is actually "seen" by Gemini.
+    if (project.photoPaths.isNotEmpty) {
+      try {
+        structuralContext = await _analyzeImageStructure(project.photoPaths.first);
+      } catch (e) {
+        print("Structure analysis failed: $e");
+      }
+    }
 
+    final prompt = _buildEstimatePrompt(project, scope, costConfig);
+
+    try {
       // For demo/offline mode, return calculated estimate
       if (_apiKey.isEmpty || _apiKey == "YOUR_GEMINI_API_KEY") {
-        return _calculateEstimate(project, scope, costConfig, prompt);
+        return _calculateEstimate(project, scope, costConfig, prompt, structuralContext);
       }
 
-      // Call Gemini API for AI-powered estimate
+      // Call Gemini API for Estimate Explanation (Text Only)
       final response = await http.post(
         Uri.parse("$_baseUrl?key=$_apiKey"),
         headers: {'Content-Type': 'application/json'},
@@ -42,8 +56,8 @@ class EstimateService {
             }
           ],
           'generationConfig': {
-            'temperature': 0.5,
-            'maxOutputTokens': 2048,
+             'temperature': 0.5,
+             'maxOutputTokens': 2048,
           }
         }),
       );
@@ -53,15 +67,34 @@ class EstimateService {
         final aiResponse = data['candidates'][0]['content']['parts'][0]['text'];
         
         // Use AI response as explanation, but calculate costs ourselves
-        final estimate = _calculateEstimate(project, scope, costConfig, prompt);
+        final estimate = _calculateEstimate(project, scope, costConfig, prompt, structuralContext);
         return estimate.copyWith(explanation: aiResponse);
       } else {
         throw Exception('Failed to generate estimate: ${response.statusCode}');
       }
     } catch (e) {
       // Fallback to calculated estimate
-      return _calculateEstimate(project, scope, costConfig, _buildEstimatePrompt(project, scope, costConfig));
+      return _calculateEstimate(
+          project, 
+          scope, 
+          costConfig, 
+          prompt, 
+          structuralContext
+      );
     }
+  }
+
+  /// Regenerates only the AI design image (useful for "Try Again" functionality)
+  Future<String> refreshDesignImage(ProjectModel project) async {
+    String? structuralContext;
+    if (project.photoPaths.isNotEmpty) {
+      try {
+        structuralContext = await _analyzeImageStructure(project.photoPaths.first);
+      } catch (e) {
+        print("Refresh analysis failed: $e");
+      }
+    }
+    return _generateDesignImageUrl(project, structuralContext);
   }
 
   String _buildEstimatePrompt(ProjectModel project, ScopeModel scope, CostConfigModel costConfig) {
@@ -91,6 +124,7 @@ Keep it professional and client-friendly.
     ScopeModel scope,
     CostConfigModel costConfig,
     String prompt,
+    String? structuralContext,
   ) {
     final area = project.propertyDetails.carpetArea;
     final items = <EstimateItem>[];
@@ -149,7 +183,8 @@ Keep it professional and client-friendly.
       status: EstimateStatus.draft,
       createdAt: DateTime.now(),
       explanation: _generateExplanation(project, subtotal, total),
-      designImageUrl: _getDesignImageForStyle(project.designPreferences.primaryStyle),
+      // Pass the structural context
+      designImageUrl: _generateDesignImageUrl(project, structuralContext),
     );
   }
 
@@ -282,15 +317,12 @@ Note: Prices are indicative and may vary based on final material selection and m
       return estimate;
     }
 
-    // Calculate reduction needed
     final reductionNeeded = estimate.total - targetBudget;
     final reductionPercentage = (reductionNeeded / estimate.total) * 100;
 
-    // Reduce non-essential items
     final optimizedItems = estimate.items.map((item) {
       if (item.category == EstimateCategory.accessories || 
           item.category == EstimateCategory.lighting) {
-        // Reduce by 20%
         final newAmount = item.amount * 0.8;
         return item.copyWith(
           amount: newAmount,
@@ -312,11 +344,103 @@ Note: Prices are indicative and may vary based on final material selection and m
       explanation: '${estimate.explanation}\n\nOptimized to fit budget: Reduced by ${reductionPercentage.toStringAsFixed(1)}%',
     );
   }
+String _generateDesignImageUrl(ProjectModel project, String? structuralContext) {
+    final prefs = project.designPreferences;
 
-  String _getDesignImageForStyle(String style) {
-    final prompt = "interior design $style room, photorealistic, 4k";
-    final encoded = Uri.encodeComponent(prompt);
-    // Simplified URL to ensure successful generation/decoding
-    return "https://pollinations.ai/p/$encoded?width=800&height=600&nologo=true";
+    final StringBuffer promptBuilder = StringBuffer();
+
+    // --- 1. The Container (Crucial: Keeps the original geometry) ---
+    // We define the image as a "design makeover" taking place INSIDE the
+    // specific structure identified by Gemini.
+    if (structuralContext != null && structuralContext.isNotEmpty) {
+      promptBuilder.write("A photorealistic interior design makeover visualized within the exact existing architectural shell described as: $structuralContext. ");
+      promptBuilder.write("The structural elements like walls, windows, and ceiling beams remain, but the space is now fully furnished. ");
+    } else {
+      // Fallback if structure fails, though unlikely in this flow
+       promptBuilder.write("A photorealistic interior design of a furnished ${project.propertyDetails.spaceTypes.join(', ')}. ");
+    }
+
+    // --- 2. The Style Transformation ---
+    promptBuilder.write("The empty space is transformed into a luxurious ${prefs.primaryStyle} setting. ");
+
+    // --- 3. The Contents (This adds the missing furniture) ---
+    // We must explicitly tell the AI to fill the void with expensive-looking items.
+    promptBuilder.write("The area is curated with high-end furniture appropriate for the space, premium area rugs, designer lighting fixtures, large potted plants, and framed artwork on the walls. ");
+
+    // --- 4. Materials ---
+    if (prefs.materials.flooring.isNotEmpty) {
+      promptBuilder.write("The floor features polished ${prefs.materials.flooring} with rugs on top. ");
+    }
+    if (prefs.materials.wallFinish.isNotEmpty) {
+      promptBuilder.write("Walls are finished with ${prefs.materials.wallFinish}. ");
+    }
+
+    // --- 5. Atmosphere and Quality ---
+    // Dramatic lighting helps make furniture look more realistic and luxurious.
+    promptBuilder.write("Dramatic warm lighting highlighting textures, clutter-free, highly detailed, 8k resolution, interior architecture magazine photography.");
+
+    final encoded = Uri.encodeComponent(promptBuilder.toString());
+
+    // Generate a new unique seed on every call to ensure different furniture arrangements each time
+    final seed = DateTime.now().millisecondsSinceEpoch;
+
+    // Using Flux model handles complex, multi-part prompts like this best.
+    return "https://image.pollinations.ai/prompt/$encoded?width=1024&height=768&nologo=true&seed=$seed&model=flux";
+  }
+  /// New Method: Sends the image file to Gemini to get a "Visual Blueprint"
+  Future<String?> _analyzeImageStructure(String imagePath) async {
+    if (_apiKey.isEmpty) return null;
+
+    try {
+      final file = File(imagePath);
+      if (!await file.exists()) return null;
+
+      final bytes = await file.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      // Request ARCHITECTURAL SHELL only.
+      // We want to remove existing furniture/people/clutter from the description 
+      // so the image generator can "fill" the empty shell with NEW furniture.
+      final structurePrompt = "Describe ONLY the static ARCHITECTURAL STRUCTURE of this room. "
+          "Mention the Walls, Ceiling, Floor, Windows, Doors, and Lighting placement. "
+          "Do NOT mention furniture, people, computers, or clutter. "
+          "Treat the room as if it were completely empty. "
+          "Provide 10 descriptive keywords/phrases. "
+          "Example: 'Rectangular room, white drop ceiling, large window on left wall, gray tile floor, recessed lighting'.";
+
+      final response = await http.post(
+        Uri.parse("$_baseUrl?key=$_apiKey"),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {'text': structurePrompt},
+                {
+                  'inline_data': {
+                    'mime_type': 'image/jpeg', 
+                    'data': base64Image
+                  }
+                }
+              ]
+            }
+          ],
+          'generationConfig': {
+            'temperature': 0.2,
+            'maxOutputTokens': 150,
+          }
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final description = data['candidates'][0]['content']['parts'][0]['text'];
+        print("Gemini Keywords: $description"); 
+        return description;
+      }
+    } catch (e) {
+      print("Error analyzing image structure: $e");
+    }
+    return null;
   }
 }
