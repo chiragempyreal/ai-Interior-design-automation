@@ -149,7 +149,8 @@
   }
 
   .pill-hover {
-    @apply premium-transition hover:scale-105 hover:shadow-lg hover:-translate-y-0.5;
+    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    @apply hover:scale-105 hover:shadow-lg hover:-translate-y-0.5;
   }
 
   /* Cards & Containers */

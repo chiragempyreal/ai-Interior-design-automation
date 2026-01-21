@@ -1,4 +1,3 @@
-import React from 'react';
 import { CheckCircle, Circle, Minus, Plus } from 'lucide-react';
 
 const Pricing = () => {

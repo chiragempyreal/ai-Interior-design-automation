@@ -145,6 +145,7 @@ export const verifyOtp = async (req: Request, res: Response, next: NextFunction)
       isNewUser
     });
   } catch (error) {
+    console.error('Verify OTP Error:', error);
     next(error);
   }
 };

@@ -8,7 +8,16 @@ import { config } from '../config/db';
 export const createUser = async (userData: Partial<IUser>) => {
   // Default to 'client' role if not specified
   if (!userData.role_id) {
-    const clientRole = await Role.findOne({ name: 'client' });
+    let clientRole = await Role.findOne({ name: 'client' });
+    
+    // Auto-create client role if it doesn't exist (Self-healing)
+    if (!clientRole) {
+      clientRole = await Role.create({
+        name: 'client',
+        display_name: 'Client'
+      });
+    }
+
     if (clientRole) {
       userData.role_id = clientRole._id as any;
     }
