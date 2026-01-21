@@ -7,6 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsDoc from 'swagger-jsdoc';
 import logger from './utils/logger';
 import routes from './routes';
+import { sendSuccess, sendError } from './utils/utilHelpers';
 
 const app: Application = express();
 
@@ -31,8 +32,22 @@ const swaggerOptions = {
         url: 'http://localhost:5000',
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
-  apis: ['./src/routes/*.ts'],
+  apis: ['./src/routes/*.ts', './src/controllers/*.ts'],
 };
 
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
@@ -43,17 +58,13 @@ app.use('/api/v1', routes);
 
 // Health Check
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
+  return sendSuccess(res, 'UP', { timestamp: new Date().toISOString() });
 });
 
 // Global Error Handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   logger.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Internal Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
-  });
+  return sendError(res, 'Internal Server Error', err.message, 500);
 });
 
 export default app;
