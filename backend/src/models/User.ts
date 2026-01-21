@@ -6,6 +6,8 @@ export interface IUser extends Document {
   email?: string;
   phone: string;
   password?: string;
+  otp?: string;
+  otpExpires?: Date;
   company_name?: string;
   profile_image?: string;
   subscription: 'free' | 'pro' | 'enterprise';
@@ -39,6 +41,15 @@ const UserSchema: Schema = new Schema(
     },
     password: {
       type: String,
+      select: false,
+    },
+    otp: {
+      type: String,
+      select: false,
+    },
+    otpExpires: {
+      type: Date,
+      select: false,
     },
     company_name: {
       type: String,

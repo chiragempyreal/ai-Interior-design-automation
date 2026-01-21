@@ -89,3 +89,40 @@ export const resetPassword = async (resetToken: string, newPassword: string) => 
 
   return user;
 };
+
+export const generateOtp = async (phone: string) => {
+  const user = await User.findOne({ phone });
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  // Generate random 6-digit OTP (Mock for now)
+  const otp = '123456'; 
+
+  // Save to user
+  user.otp = otp; 
+  user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+  await user.save();
+
+  console.log(`[MOCK OTP] Phone: ${phone}, OTP: ${otp}`);
+  return otp;
+};
+
+export const verifyOtp = async (phone: string, otp: string) => {
+  const user = await User.findOne({ 
+    phone,
+    otp, 
+    otpExpires: { $gt: Date.now() } 
+  }).populate('role_id');
+
+  if (!user) {
+    throw new Error('Invalid OTP or OTP expired');
+  }
+
+  // Clear OTP
+  user.otp = undefined;
+  user.otpExpires = undefined;
+  await user.save();
+
+  return user;
+};

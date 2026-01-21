@@ -8,21 +8,21 @@ import { generateInteriorDesignPrompt } from '../utils/aiPrompts';
 // Helper to delay for mock AI generation
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-
 /**
  * @swagger
  * tags:
- *   name: Projects
- *   description: Project Management API
+ *   name: Mobile
+ *   description: Mobile Project Management API
  */
 
 /**
  * @swagger
- * /api/v1/projects:
+ * /api/v1/mobile/projects:
  *   post:
- *     summary: Create a new project (Wizard Step 1)
- *     tags: [Projects]
- *     security: []
+ *     summary: Create a new project (Mobile)
+ *     tags: [Mobile]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -85,6 +85,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  */
 export const createProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!req.user) return sendError(res, 'User not authenticated', 401);
     const { title, clientName, clientEmail, clientPhone, projectType } = req.body;
 
     const project = await Project.create({
@@ -93,7 +94,8 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
       clientEmail,
       clientPhone,
       projectType,
-      status: 'draft'
+      status: 'draft',
+      createdBy: req.user._id as any // Set the owner
     });
 
     return sendSuccess(res, 'Project created successfully', project, 201);
@@ -105,11 +107,12 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
 
 /**
  * @swagger
- * /api/v1/projects/{id}:
+ * /api/v1/mobile/projects/{id}:
  *   put:
- *     summary: Update project details (Wizard Steps 2-7)
- *     tags: [Projects]
- *     security: []
+ *     summary: Update project details (Mobile)
+ *     tags: [Mobile]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -173,22 +176,22 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
  */
 export const updateProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!req.user) return sendError(res, 'User not authenticated', 401);
     const { id } = req.params;
     
-    let project = await Project.findById(id);
+    // Check ownership
+    let project = await Project.findOne({ _id: id, createdBy: req.user._id as any });
 
     if (!project) {
-      return sendError(res, 'Project not found', null, 404);
+      return sendError(res, 'Project not found or unauthorized', null, 404);
     }
 
     // Remove fields that shouldn't be updated if empty/null
     const updateData = { ...req.body };
-    if (!updateData.title) delete updateData.title; // Don't overwrite title with empty string
+    if (!updateData.title) delete updateData.title;
     if (!updateData.clientName) delete updateData.clientName;
     if (!updateData.clientEmail) delete updateData.clientEmail;
 
-    // Update fields based on request body
-    // Using simple spread for now, but in prod we might want specific field validation per step
     project = await Project.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true
@@ -203,11 +206,12 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
 
 /**
  * @swagger
- * /api/v1/projects/{id}:
+ * /api/v1/mobile/projects/{id}:
  *   get:
- *     summary: Get a single project
- *     tags: [Projects]
- *     security: []
+ *     summary: Get a single project (Mobile)
+ *     tags: [Mobile]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -248,10 +252,11 @@ export const updateProject = async (req: Request, res: Response, next: NextFunct
  */
 export const getProject = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const project = await Project.findById(req.params.id);
+    if (!req.user) return sendError(res, 'User not authenticated', 401);
+    const project = await Project.findOne({ _id: req.params.id, createdBy: req.user._id as any });
 
     if (!project) {
-      return sendError(res, 'Project not found', null, 404);
+      return sendError(res, 'Project not found or unauthorized', null, 404);
     }
 
     return sendSuccess(res, 'Project retrieved successfully', project);
@@ -263,10 +268,10 @@ export const getProject = async (req: Request, res: Response, next: NextFunction
 
 /**
  * @swagger
- * /api/v1/projects:
+ * /api/v1/mobile/projects:
  *   get:
- *     summary: Get all projects
- *     tags: [Projects]
+ *     summary: Get all projects (Mobile)
+ *     tags: [Mobile]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -309,16 +314,12 @@ export const getProject = async (req: Request, res: Response, next: NextFunction
  */
 export const getProjects = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!req.user) return sendError(res, 'User not authenticated', 401);
     const { status, limit } = req.query;
     
-    let query: any = {};
+    let query: any = { createdBy: req.user._id as any }; // Force ownership check
     if (status) {
       query.status = status;
-    }
-
-    // If filtered by 'pending' for dashboard
-    if (req.path.includes('pending')) {
-      query.status = { $in: ['submitted', 'under_review'] };
     }
 
     const projects = await Project.find(query)
@@ -334,11 +335,12 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
 
 /**
  * @swagger
- * /api/v1/projects/{id}/upload:
+ * /api/v1/mobile/projects/{id}/upload:
  *   post:
- *     summary: Upload project images
- *     tags: [Projects]
- *     security: []
+ *     summary: Upload project images (Mobile)
+ *     tags: [Mobile]
+ *     security:
+ *       - bearerAuth: []
  *     consumes:
  *       - multipart/form-data
  *     parameters:
@@ -392,6 +394,7 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
  */
 export const uploadProjectImages = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!req.user) return sendError(res, 'User not authenticated', 401);
     const { id } = req.params;
     const files = req.files as Express.Multer.File[];
 
@@ -399,9 +402,9 @@ export const uploadProjectImages = async (req: Request, res: Response, next: Nex
       return sendError(res, 'No files uploaded', null, 400);
     }
 
-    const project = await Project.findById(id);
+    const project = await Project.findOne({ _id: id, createdBy: req.user._id as any });
     if (!project) {
-      return sendError(res, 'Project not found', null, 404);
+      return sendError(res, 'Project not found or unauthorized', null, 404);
     }
 
     // Create URLs for the uploaded files
@@ -423,11 +426,12 @@ export const uploadProjectImages = async (req: Request, res: Response, next: Nex
 
 /**
  * @swagger
- * /api/v1/projects/{id}/preview:
+ * /api/v1/mobile/projects/{id}/preview:
  *   post:
- *     summary: Generate an AI preview for the project
- *     tags: [Projects]
- *     security: []
+ *     summary: Generate an AI preview for the project (Mobile)
+ *     tags: [Mobile]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -473,11 +477,12 @@ export const uploadProjectImages = async (req: Request, res: Response, next: Nex
  */
 export const generateAIPreview = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!req.user) return sendError(res, 'User not authenticated', 401);
     const { id } = req.params;
-    const project = await Project.findById(id);
+    const project = await Project.findOne({ _id: id, createdBy: req.user._id as any });
 
     if (!project) {
-      return sendError(res, 'Project not found', null, 404);
+      return sendError(res, 'Project not found or unauthorized', null, 404);
     }
 
     // Optimization: Return existing preview if available (saves cost)
@@ -605,10 +610,10 @@ export const generateAIPreview = async (req: Request, res: Response, next: NextF
 
 /**
  * @swagger
- * /api/v1/projects/stats:
+ * /api/v1/mobile/projects/stats:
  *   get:
- *     summary: Get dashboard statistics
- *     tags: [Projects]
+ *     summary: Get dashboard statistics (Mobile)
+ *     tags: [Mobile]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -638,8 +643,9 @@ export const generateAIPreview = async (req: Request, res: Response, next: NextF
  */
 export const getDashboardStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const activeProjects = await Project.countDocuments({ status: { $in: ['approved', 'quoted'] } });
-    const pendingQuotes = await Project.countDocuments({ status: { $in: ['submitted', 'under_review'] } });
+    if (!req.user) return sendError(res, 'User not authenticated', 401);
+    const activeProjects = await Project.countDocuments({ status: { $in: ['approved', 'quoted'] }, createdBy: req.user._id as any });
+    const pendingQuotes = await Project.countDocuments({ status: { $in: ['submitted', 'under_review'] }, createdBy: req.user._id as any });
     
     // Mock revenue for now
     const revenue = 1850000; // 18.5L

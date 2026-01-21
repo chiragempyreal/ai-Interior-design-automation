@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import * as projectController from '../controllers/projectController';
+import * as mobileController from '../controllers/mobileController';
 import { protect } from '../middleware/authMiddleware';
 import requestValidator from '../middleware/requestValidatorMiddleware';
 import { createProjectSchema, updateProjectSchema } from '../validators/projectValidator';
@@ -36,16 +36,14 @@ const upload = multer({
   }
 });
 
-// Dashboard / Admin Routes (Protected)
-router.get('/stats', protect, projectController.getDashboardStats);
-router.get('/pending', protect, projectController.getProjects); // Controller handles "pending" path check or query
-router.get('/', protect, projectController.getProjects);
+router.use(protect);
 
-// Public Wizard Routes
-router.post('/', requestValidator(createProjectSchema), projectController.createProject);
-router.put('/:id', requestValidator(updateProjectSchema), projectController.updateProject);
-router.get('/:id', projectController.getProject);
-router.post('/:id/upload', upload.array('photos', 5), projectController.uploadProjectImages);
-router.post('/:id/preview', projectController.generateAIPreview);
+router.get('/stats', mobileController.getDashboardStats);
+router.get('/', mobileController.getProjects);
+router.post('/', requestValidator(createProjectSchema), mobileController.createProject);
+router.put('/:id', requestValidator(updateProjectSchema), mobileController.updateProject);
+router.get('/:id', mobileController.getProject);
+router.post('/:id/upload', upload.array('photos', 5), mobileController.uploadProjectImages);
+router.post('/:id/preview', mobileController.generateAIPreview);
 
 export default router;

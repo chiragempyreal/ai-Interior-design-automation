@@ -14,16 +14,13 @@ import { sendSuccess, sendError, sendEmail } from '../utils/utilHelpers';
  *   description: Authentication API
  */
 
-// ... (register, login, refreshToken remain same but utilizing helpers already)
-
-// ...
-
 /**
  * @swagger
  * /api/v1/auth/forgot-password:
  *   post:
  *     summary: Request password reset
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -92,6 +89,7 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
  *   post:
  *     summary: Reset password
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -140,6 +138,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
  *   post:
  *     summary: Register a new user
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -243,12 +242,14 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
   }
 };
 
+
 /**
  * @swagger
  * /api/v1/auth/login:
  *   post:
- *     summary: Login user using phone number
+ *     summary: Login user using phone number and password
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -274,31 +275,40 @@ export const register = async (req: Request, res: Response, next: NextFunction) 
  *             schema:
  *               type: object
  *               properties:
- *                 user:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Login successful"
+ *                 data:
  *                   type: object
  *                   properties:
- *                     _id:
- *                       type: string
- *                       example: 60d0fe4f5311236168a109ca
- *                     full_name:
- *                       type: string
- *                       example: John Doe
- *                     email:
- *                       type: string
- *                       example: john@example.com
- *                     phone:
- *                       type: string
- *                       example: "+1234567890"
- *                     subscription:
- *                       type: string
- *                       example: free
- *                     role_id:
+ *                     user:
  *                       type: object
  *                       properties:
  *                         _id:
  *                           type: string
- *                           example: 60d0fe4f5311236168a109cb
- *                         name:
+ *                           example: 60d0fe4f5311236168a109ca
+ *                         full_name:
+ *                           type: string
+ *                           example: John Doe
+ *                         phone:
+ *                           type: string
+ *                           example: "+1234567890"
+ *                         role_id:
+ *                           type: object
+ *                           properties:
+ *                             name:
+ *                               type: string
+ *                               example: client
+ *                     tokens:
+ *                       type: object
+ *                       properties:
+ *                         accessToken:
+ *                           type: string
+ *                           example: "eyJhbGciOiJIUzI1..."
+ *                         refreshToken:
  *                           type: string
  *                           example: client
  *                 tokens:
@@ -347,10 +357,92 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
 /**
  * @swagger
+ * /api/v1/auth/send-otp:
+ *   post:
+ *     summary: Send OTP for login
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "+1234567890"
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *       404:
+ *         description: User not found
+ */
+export const sendOtp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone } = req.body;
+    const otp = await authService.generateOtp(phone);
+    return sendSuccess(res, 'OTP sent successfully', { otp });
+  } catch (error: any) {
+    if (error.message === 'User not found') {
+      return sendError(res, 'User not found', null, 404);
+    }
+    next(error);
+  }
+};
+
+/**
+ * @swagger
+ * /api/v1/auth/verify-otp:
+ *   post:
+ *     summary: Verify OTP and login
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - phone
+ *               - otp
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "+1234567890"
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       400:
+ *         description: Invalid OTP
+ */
+export const verifyOtp = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { phone, otp } = req.body;
+    const user = await authService.verifyOtp(phone, otp);
+    const tokens = authService.generateTokens(user);
+    return sendSuccess(res, 'Login successful', { user, tokens });
+  } catch (error: any) {
+    if (error.message === 'Invalid OTP or OTP expired') {
+      return sendError(res, 'Invalid OTP or OTP expired', null, 400);
+    }
+    next(error);
+  }
+};
+
+/**
+ * @swagger
  * /api/v1/auth/refresh-token:
  *   post:
  *     summary: Refresh access token
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
