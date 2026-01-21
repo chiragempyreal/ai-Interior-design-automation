@@ -1,0 +1,1 @@
+Analyzing ai_interior_design_automation...                      Terminate batch job (Y/N)? 
