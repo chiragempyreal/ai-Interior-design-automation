@@ -90,12 +90,17 @@ const seedData = async () => {
       title: 'Modern Living Room Renovation',
       clientName: 'Alice Johnson',
       clientEmail: 'alice@example.com',
-      requirements: {
-        roomType: 'Living Room',
+      projectType: 'Residential',
+      spaceType: 'Living Room',
+      stylePreferences: {
         style: 'Modern',
-        budget: 15000,
+        colors: ['Neutral', 'Beige']
       },
-      status: 'pending_approval',
+      budget: {
+        min: 10000,
+        max: 20000
+      },
+      status: 'under_review',
     });
 
     logger.info('Projects Seeded');
