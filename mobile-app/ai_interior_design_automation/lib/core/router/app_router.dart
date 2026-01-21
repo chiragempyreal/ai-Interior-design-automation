@@ -12,20 +12,18 @@ import '../../features/ai_scope/models/scope_model.dart';
 import '../../features/estimate/screens/estimate_generator_screen.dart';
 import '../../features/estimate/screens/estimate_details_screen.dart';
 import '../../features/estimate/models/estimate_model.dart';
+import '../../features/auth/screens/login_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     // Splash Screen
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
-    // Dashboard
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const DashboardScreen(),
     ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/create-project',
       builder: (context, state) => const CreateProjectScreen(),
@@ -35,7 +33,7 @@ final appRouter = GoRouter(
       builder: (context, state) {
         ProjectModel? project;
         ImageSource? source;
-        
+
         if (state.extra is Map) {
           final extras = state.extra as Map<String, dynamic>;
           project = extras['project'] as ProjectModel?;
@@ -43,8 +41,11 @@ final appRouter = GoRouter(
         } else if (state.extra is ProjectModel) {
           project = state.extra as ProjectModel;
         }
-        
-        return ImageInputScreen(project: project, autoPickSource: source); // Passes source
+
+        return ImageInputScreen(
+          project: project,
+          autoPickSource: source,
+        ); // Passes source
       },
     ),
     GoRoute(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/brand_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -20,7 +21,14 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigateToDashboard() async {
     await Future.delayed(const Duration(seconds: 3));
     if (mounted) {
-      context.go('/dashboard');
+      final prefs = await SharedPreferences.getInstance();
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+      if (isLoggedIn) {
+        context.go('/dashboard');
+      } else {
+        context.go('/login');
+      }
     }
   }
 
@@ -45,44 +53,41 @@ class _SplashScreenState extends State<SplashScreen> {
             children: [
               // Logo Container
               Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: BrandColors.primary,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: BrandColors.primary.withOpacity(0.3),
-                      blurRadius: 30,
-                      offset: const Offset(0, 10),
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: BrandColors.primary,
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: BrandColors.primary.withOpacity(0.3),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.architecture,
-                  size: 60,
-                  color: Colors.white,
-                ),
-              )
-                  .animate()
-                  .scale(
-                    duration: 800.ms,
-                    curve: Curves.elasticOut,
+                    child: const Icon(
+                      Icons.architecture,
+                      size: 60,
+                      color: Colors.white,
+                    ),
                   )
+                  .animate()
+                  .scale(duration: 800.ms, curve: Curves.elasticOut)
                   .fadeIn(duration: 600.ms),
 
               const SizedBox(height: 40),
 
               // Brand Name
               Text(
-                BrandConstants.brandName,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: BrandColors.textDark,
-                  letterSpacing: -0.5,
-                ),
-              )
+                    BrandConstants.brandName,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: BrandColors.textDark,
+                      letterSpacing: -0.5,
+                    ),
+                  )
                   .animate(delay: 400.ms)
                   .fadeIn(duration: 600.ms)
                   .slideY(begin: 0.3, end: 0),
@@ -91,14 +96,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
               // Tagline
               Text(
-                BrandConstants.tagline,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: BrandColors.textBody,
-                  letterSpacing: 0.5,
-                ),
-                textAlign: TextAlign.center,
-              )
+                    BrandConstants.tagline,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: BrandColors.textBody,
+                      letterSpacing: 0.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  )
                   .animate(delay: 800.ms)
                   .fadeIn(duration: 600.ms)
                   .slideY(begin: 0.3, end: 0),

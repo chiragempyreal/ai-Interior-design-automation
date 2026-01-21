@@ -5,12 +5,12 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/brand_colors.dart';
 import '../../project/models/project_model.dart';
 import '../models/estimate_model.dart';
 import '../providers/estimate_provider.dart';
 
-class EstimateDetailsScreen extends StatelessWidget {
+class EstimateDetailsScreen extends StatefulWidget {
   final EstimateModel estimate;
   final ProjectModel project;
 
@@ -19,6 +19,14 @@ class EstimateDetailsScreen extends StatelessWidget {
     required this.estimate,
     required this.project,
   });
+
+  @override
+  State<EstimateDetailsScreen> createState() => _EstimateDetailsScreenState();
+}
+
+class _EstimateDetailsScreenState extends State<EstimateDetailsScreen> {
+  bool _isExporting = false;
+  bool _isSharing = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +39,33 @@ class EstimateDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Estimate Details"),
+        centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () => _shareEstimate(context),
+            icon: _isSharing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: BrandColors.textDark,
+                    ),
+                  )
+                : const Icon(Icons.share),
+            onPressed: _isSharing ? null : () => _shareEstimate(context),
           ),
           IconButton(
-            icon: const Icon(Icons.picture_as_pdf),
-            onPressed: () => _exportPdf(context),
+            icon: _isExporting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: BrandColors.textDark,
+                    ),
+                  )
+                : const Icon(Icons.picture_as_pdf),
+            onPressed: _isExporting ? null : () => _exportPdf(context),
           ),
         ],
       ),
@@ -48,13 +75,8 @@ class EstimateDetailsScreen extends StatelessWidget {
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.secondary,
-                  AppColors.secondary.withOpacity(0.8),
-                ],
-              ),
+            decoration: const BoxDecoration(
+              gradient: BrandColors.primaryGradient,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,35 +88,34 @@ class EstimateDetailsScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            project.name,
-                            style: const TextStyle(
+                            widget.project.name,
+                            style: BrandTypography.h3.copyWith(
                               color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            "Estimate #${estimate.id.substring(0, 8).toUpperCase()}",
-                            style: TextStyle(
+                            "Estimate #${widget.estimate.id.substring(0, 8).toUpperCase()}",
+                            style: BrandTypography.bodySmall.copyWith(
                               color: Colors.white.withOpacity(0.9),
-                              fontSize: 14,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    _buildStatusBadge(estimate.status),
+                    _buildStatusBadge(widget.estimate.status),
                   ],
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    _buildHeaderInfo("Version", "v${estimate.version}"),
+                    _buildHeaderInfo("Version", "v${widget.estimate.version}"),
                     const SizedBox(width: 24),
                     _buildHeaderInfo(
                       "Date",
-                      DateFormat('dd MMM yyyy').format(estimate.createdAt),
+                      DateFormat(
+                        'dd MMM yyyy',
+                      ).format(widget.estimate.createdAt),
                     ),
                   ],
                 ),
@@ -103,58 +124,45 @@ class EstimateDetailsScreen extends StatelessWidget {
           ),
 
           // AI Design Proposal Section
-          if (estimate.designImageUrl != null)
-            // Items List
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                if (widget.estimate.designImageUrl != null) ...[
                   Container(
-                    margin: const EdgeInsets.fromLTRB(16, 24, 16, 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    margin: const EdgeInsets.fromLTRB(4, 8, 4, 16),
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.auto_awesome,
-                              color: AppColors.primary,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              "AI Design Proposal",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
+                        const Icon(
+                          Icons.auto_awesome,
+                          color: BrandColors.primary,
+                          size: 20,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(width: 8),
+                        Text("AI Design Proposal", style: BrandTypography.h5),
                       ],
                     ),
                   ),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Original
-                      if (project.photoPaths.isNotEmpty)
+                      if (widget.project.photoPaths.isNotEmpty)
                         Expanded(
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 "Original Site",
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: BrandTypography.caption,
                               ),
                               const SizedBox(height: 8),
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  BrandRadius.lg,
+                                ),
                                 child: Image.file(
-                                  File(project.photoPaths.first),
+                                  File(widget.project.photoPaths.first),
                                   height: 150,
                                   width: double.infinity,
                                   fit: BoxFit.cover,
@@ -163,17 +171,17 @@ class EstimateDetailsScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                      if (project.photoPaths.isNotEmpty)
+                      if (widget.project.photoPaths.isNotEmpty)
                         const SizedBox(width: 16),
                       // Generated
                       Expanded(
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               "AI Redesigned",
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 12,
+                              style: BrandTypography.caption.copyWith(
+                                color: BrandColors.primary,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -190,7 +198,7 @@ class EstimateDetailsScreen extends StatelessWidget {
                                           maxScale: 4.0,
                                           child: Center(
                                             child: Image.network(
-                                              estimate.designImageUrl!,
+                                              widget.estimate.designImageUrl!,
                                             ),
                                           ),
                                         ),
@@ -214,11 +222,13 @@ class EstimateDetailsScreen extends StatelessWidget {
                                 );
                               },
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(
+                                  BrandRadius.lg,
+                                ),
                                 child: Stack(
                                   children: [
                                     Image.network(
-                                      estimate.designImageUrl!,
+                                      widget.estimate.designImageUrl!,
                                       height: 150,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
@@ -266,24 +276,27 @@ class EstimateDetailsScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Items by Category
-                  ..._buildItemsByCategory(currencyFormat),
-
                   const SizedBox(height: 24),
-
-                  // Cost Summary
-                  _buildCostSummary(currencyFormat),
-
-                  const SizedBox(height: 24),
-
-                  // Explanation
-                  if (estimate.explanation != null)
-                    _buildExplanation(estimate.explanation!),
-
-                  const SizedBox(height: 100), // Space for bottom bar
                 ],
-              ),
+
+                // Items by Category
+                ..._buildItemsByCategory(currencyFormat),
+
+                const SizedBox(height: 24),
+
+                // Cost Summary
+                _buildCostSummary(currencyFormat),
+
+                const SizedBox(height: 24),
+
+                // Explanation
+                if (widget.estimate.explanation != null)
+                  _buildExplanation(widget.estimate.explanation!),
+
+                const SizedBox(height: 100), // Space for bottom bar
+              ],
             ),
+          ),
 
           // Bottom Action Bar
           _buildBottomActionBar(context),
@@ -302,19 +315,19 @@ class EstimateDetailsScreen extends StatelessWidget {
         text = "DRAFT";
         break;
       case EstimateStatus.pending:
-        color = Colors.orange;
+        color = BrandColors.warning;
         text = "PENDING";
         break;
       case EstimateStatus.approved:
-        color = Colors.green;
+        color = BrandColors.success;
         text = "APPROVED";
         break;
       case EstimateStatus.rejected:
-        color = Colors.red;
+        color = BrandColors.error;
         text = "REJECTED";
         break;
       case EstimateStatus.revised:
-        color = Colors.blue;
+        color = BrandColors.info;
         text = "REVISED";
         break;
     }
@@ -324,6 +337,7 @@ class EstimateDetailsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: BrandShadows.light,
       ),
       child: Text(
         text,
@@ -360,7 +374,7 @@ class EstimateDetailsScreen extends StatelessWidget {
   List<Widget> _buildItemsByCategory(NumberFormat currencyFormat) {
     final itemsByCategory = <EstimateCategory, List<EstimateItem>>{};
 
-    for (final item in estimate.items) {
+    for (final item in widget.estimate.items) {
       if (!itemsByCategory.containsKey(item.category)) {
         itemsByCategory[item.category] = [];
       }
@@ -383,10 +397,15 @@ class EstimateDetailsScreen extends StatelessWidget {
     NumberFormat currencyFormat,
   ) {
     final total = items.fold<double>(0, (sum, item) => sum + item.amount);
+    final theme = Theme.of(context);
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shadowColor: theme.shadowColor.withOpacity(0.1),
+      color: theme.cardTheme.color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(BrandRadius.xxl),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -396,25 +415,22 @@ class EstimateDetailsScreen extends StatelessWidget {
               children: [
                 Icon(
                   _getCategoryIcon(category),
-                  color: AppColors.primary,
+                  color: theme.colorScheme.primary,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     _getCategoryName(category),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                    style: BrandTypography.h5.copyWith(
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
                 Text(
                   currencyFormat.format(total),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: AppColors.primary,
+                  style: BrandTypography.h5.copyWith(
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ],
@@ -428,6 +444,7 @@ class EstimateDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildItemRow(EstimateItem item, NumberFormat currencyFormat) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -442,17 +459,16 @@ class EstimateDetailsScreen extends StatelessWidget {
                   children: [
                     Text(
                       item.description,
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: BrandTypography.bodySmall.copyWith(
                         fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "${item.quantity.toStringAsFixed(0)} ${item.unit} × ${currencyFormat.format(item.rate)}",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                      style: BrandTypography.caption.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                   ],
@@ -460,9 +476,9 @@ class EstimateDetailsScreen extends StatelessWidget {
               ),
               Text(
                 currencyFormat.format(item.amount),
-                style: const TextStyle(
-                  fontSize: 14,
+                style: BrandTypography.bodySmall.copyWith(
                   fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],
@@ -471,10 +487,9 @@ class EstimateDetailsScreen extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               item.notes!,
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.textSecondary,
+              style: BrandTypography.caption.copyWith(
                 fontStyle: FontStyle.italic,
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -484,29 +499,33 @@ class EstimateDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildCostSummary(NumberFormat currencyFormat) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 4,
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shadowColor: theme.shadowColor.withOpacity(0.2),
+      color: theme.cardTheme.color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(BrandRadius.xxl),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             _buildSummaryRow(
               "Subtotal",
-              currencyFormat.format(estimate.subtotal),
+              currencyFormat.format(widget.estimate.subtotal),
               false,
             ),
             const SizedBox(height: 12),
             _buildSummaryRow(
               "Tax (18% GST)",
-              currencyFormat.format(estimate.tax),
+              currencyFormat.format(widget.estimate.tax),
               false,
             ),
             const Divider(height: 24),
             _buildSummaryRow(
               "TOTAL ESTIMATE",
-              currencyFormat.format(estimate.total),
+              currencyFormat.format(widget.estimate.total),
               true,
             ),
           ],
@@ -516,55 +535,66 @@ class EstimateDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildSummaryRow(String label, String value, bool isBold) {
+    final theme = Theme.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: isBold ? 18 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-          ),
+          style: isBold
+              ? BrandTypography.h4.copyWith(color: theme.colorScheme.onSurface)
+              : BrandTypography.bodySmall.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
         ),
         Text(
           value,
-          style: TextStyle(
-            fontSize: isBold ? 20 : 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: isBold ? AppColors.secondary : null,
-          ),
+          style: isBold
+              ? BrandTypography.h4.copyWith(color: BrandColors.accent)
+              : BrandTypography.bodySmall.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface,
+                ),
         ),
       ],
     );
   }
 
   Widget _buildExplanation(String explanation) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 2,
-      color: AppColors.primary.withOpacity(0.05),
+      shadowColor: theme.shadowColor.withOpacity(0.1),
+      color: theme.colorScheme.primary.withOpacity(0.05),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: AppColors.primary.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(BrandRadius.xxl),
+        side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(Icons.info_outline, color: AppColors.primary),
-                SizedBox(width: 8),
+                Icon(Icons.info_outline, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
                 Text(
                   "Estimate Explanation",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: theme.colorScheme.onSurface,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
               explanation,
-              style: const TextStyle(fontSize: 13, height: 1.5),
+              style: BrandTypography.bodySmall.copyWith(
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ],
         ),
@@ -573,28 +603,42 @@ class EstimateDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildBottomActionBar(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: theme.cardTheme.color, // Adaptive background
+        boxShadow: BrandShadows
+            .medium, // Shadows might need tweaking for dark mode in general, but keeping consistent
       ),
       child: SafeArea(
         child: Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () => _exportPdf(context),
-                icon: const Icon(Icons.picture_as_pdf),
-                label: const Text("Export PDF"),
+                onPressed: _isExporting ? null : () => _exportPdf(context),
+                icon: _isExporting
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    : Icon(
+                        Icons.picture_as_pdf,
+                        color: theme.colorScheme.primary,
+                      ), // Explicit color
+                label: Text(_isExporting ? "Exporting..." : "Export PDF"),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: BorderSide(color: theme.colorScheme.primary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(BrandRadius.xl),
+                  ),
+                  foregroundColor:
+                      theme.colorScheme.primary, // Ensure text is primary color
                 ),
               ),
             ),
@@ -605,9 +649,13 @@ class EstimateDetailsScreen extends StatelessWidget {
                 icon: const Icon(Icons.check_circle),
                 label: const Text("Approve"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.secondary,
+                  backgroundColor: BrandColors.accent,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(BrandRadius.xl),
+                  ),
+                  elevation: 2,
                 ),
               ),
             ),
@@ -656,36 +704,45 @@ class EstimateDetailsScreen extends StatelessWidget {
   }
 
   Future<void> _exportPdf(BuildContext context) async {
+    setState(() => _isExporting = true);
     try {
       final estimateProvider = context.read<EstimateProvider>();
-      await estimateProvider.printPdf(estimate);
+      // Run in a slight microtask to allow UI to update
+      await Future.delayed(const Duration(milliseconds: 100));
+      await estimateProvider.printPdf(widget.estimate);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("✓ PDF generated successfully!"),
-            backgroundColor: AppColors.secondary,
+            backgroundColor: BrandColors.success,
           ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Error: $e"),
+            backgroundColor: BrandColors.error,
+          ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
     }
   }
 
   Future<void> _shareEstimate(BuildContext context) async {
+    setState(() => _isSharing = true);
     try {
       final text =
           '''
-Budget Estimate - ${project.name}
+Budget Estimate - ${widget.project.name}
 
-Total: ₹${estimate.total.toStringAsFixed(0)}
-Version: ${estimate.version}
-Status: ${estimate.status.name.toUpperCase()}
+Total: ₹${widget.estimate.total.toStringAsFixed(0)}
+Version: ${widget.estimate.version}
+Status: ${widget.estimate.status.name.toUpperCase()}
 
 Generated by AI Interior Design Automation
       ''';
@@ -696,25 +753,27 @@ Generated by AI Interior Design Automation
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Error sharing: $e"),
-            backgroundColor: Colors.red,
+            backgroundColor: BrandColors.error,
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isSharing = false);
     }
   }
 
   void _approveEstimate(BuildContext context) {
     final estimateProvider = context.read<EstimateProvider>();
     estimateProvider.approveEstimate(
-      project.id,
-      estimate.id,
-      project.clientDetails.name,
+      widget.project.id,
+      widget.estimate.id,
+      widget.project.clientDetails.name,
     );
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text("✓ Estimate approved!"),
-        backgroundColor: AppColors.secondary,
+        backgroundColor: BrandColors.success,
       ),
     );
   }

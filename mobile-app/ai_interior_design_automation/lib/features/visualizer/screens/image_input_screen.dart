@@ -27,11 +27,8 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.autoPickSource != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _pickImage(widget.autoPickSource!);
-      });
-    }
+    // Auto-pick removed to prevent crashes on some devices.
+    // User must manually tap the Camera or Gallery button.
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -65,21 +62,7 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
 
     try {
       // Simulate/Call AI Generation
-      // In a real flow, we'd pass a placeholder file or byte array
-      // representing the generated image from the service.
-      // For now, using the service to "process" (simulated in service).
-      // We need a dummy file to pass to the current service signature or update service.
-      // Assuming service returns a path or URL.
-
-      // Temporary hack: Just simulate success for UI flow if service needs a file input
-      // Ideally, the service should accept a prompt and return a path/url.
-
-      // Let's assume we want to mock a generated result for the hackathon data flow
       await Future.delayed(const Duration(seconds: 3));
-
-      // Ideally we get a path back. For consistent API, let's say we succeeded.
-      // In a real partial implementation, we might not have a file yet.
-      // We will show a success message.
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -88,8 +71,6 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
             backgroundColor: BrandColors.success,
           ),
         );
-        // For now, we don't set _selectedImage unless we possess a real asset path
-        // In production, we'd download the generated image to a temp file.
       }
     } catch (e) {
       _showError("AI Generation failed: $e");
@@ -113,18 +94,9 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   }
 
   void _continue() {
-    if (_selectedImage == null && !_isGenerating) {
-      // Allow continue if testing without image or handle logic
-      // Ideally require image. Logic:
-      // if (_selectedImage == null) return _showError("Please select or generate an image.");
-    }
+    if (_selectedImage == null && !_isGenerating) {}
 
-    // Navigate to Scope Generator
-    // Pass the project and the image path
-    // If we have a project passed in, use it. Otherwise rely on provider/state.
     if (widget.project != null) {
-      // We might want to attach the image path to the project model if it supported it,
-      // or pass it along as extra data.
       context.push('/generate-scope', extra: widget.project);
     } else {
       context.pop(); // Fallback
@@ -141,16 +113,23 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
         widget.autoPickSource == null ||
         widget.autoPickSource == ImageSource.camera;
 
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: BrandColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Visual Input"),
+        title: Text(
+          "Visual Input",
+          style: BrandTypography.h4.copyWith(
+            color: theme.colorScheme.onBackground,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          color: BrandColors.textDark,
+          color: theme.colorScheme.onBackground,
           onPressed: () => context.pop(),
         ),
       ),
@@ -161,16 +140,17 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
           children: [
             Text(
               "Visualize Your Space",
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: BrandColors.textDark,
+              style: BrandTypography.h3.copyWith(
+                color: theme.colorScheme.onBackground,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               "Upload a photo or let AI generate one for you.",
-              style: TextStyle(color: BrandColors.textBody, fontSize: 16),
+              style: BrandTypography.bodyRegular.copyWith(
+                color: theme.colorScheme.onBackground.withOpacity(0.7),
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -214,22 +194,21 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
             ElevatedButton(
               onPressed: _selectedImage != null ? _continue : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: BrandColors.primary,
-                foregroundColor: Colors.white,
+                backgroundColor: theme.primaryColor,
+                foregroundColor:
+                    theme.colorScheme.onPrimary, // Adaptive text color
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(BrandRadius.xxl),
                 ),
                 elevation: 4,
-                shadowColor: BrandColors.primary.withOpacity(0.4),
-                disabledBackgroundColor: Colors.grey[300],
+                shadowColor: theme.primaryColor.withOpacity(0.4),
+                disabledBackgroundColor: theme.disabledColor,
               ),
-              child: const Text(
+              child: Text(
                 "Generate Project Scope",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+                style: BrandTypography.h5.copyWith(
+                  color: theme.colorScheme.onPrimary,
                 ),
               ),
             ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
@@ -240,14 +219,15 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   }
 
   Widget _buildImagePreview() {
+    final theme = Theme.of(context);
     return Center(
       child: Container(
         height: 280,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color,
           boxShadow: BrandShadows.medium,
-          border: Border.all(color: Colors.white, width: 6),
+          border: Border.all(color: theme.cardTheme.color!, width: 6),
           image: DecorationImage(
             image: FileImage(_selectedImage!),
             fit: BoxFit.cover,
@@ -259,12 +239,12 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
               top: 12,
               left: 10,
               child: CircleAvatar(
-                backgroundColor: Colors.white,
+                backgroundColor: theme.canvasColor, // Adapts to theme
                 radius: 20,
                 child: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.refresh,
-                    color: BrandColors.textDark,
+                    color: theme.iconTheme.color,
                     size: 20,
                   ),
                   onPressed: () {
@@ -280,12 +260,14 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   }
 
   Widget _buildPlaceholderPreview() {
+    final theme = Theme.of(context);
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(BrandRadius.lg),
         border: Border.all(
-          color: BrandColors.border.withOpacity(0.5),
+          color: theme.dividerColor.withOpacity(0.5),
           width: 2,
         ),
       ),
@@ -293,7 +275,7 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
         child: Icon(
           Icons.add_a_photo_outlined,
           size: 64,
-          color: BrandColors.textLight.withOpacity(0.5),
+          color: theme.disabledColor,
         ),
       ),
     ).animate().fadeIn();
@@ -304,26 +286,25 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(BrandRadius.xxl),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          color: theme.cardTheme.color,
+          borderRadius: BorderRadius.circular(BrandRadius.xxl),
           boxShadow: BrandShadows.light,
-          border: Border.all(color: Colors.transparent),
         ),
         child: Column(
           children: [
-            Icon(icon, color: BrandColors.primary, size: 32),
+            Icon(icon, color: theme.primaryColor, size: 32),
             const SizedBox(height: 12),
             Text(
               label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: BrandColors.textDark,
+              style: BrandTypography.h5.copyWith(
+                color: theme.colorScheme.onSurface,
               ),
             ),
           ],
@@ -333,33 +314,29 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   }
 
   Widget _buildAiGenerationCard() {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            BrandColors.primary.withOpacity(0.05),
-            BrandColors.accent.withOpacity(0.1),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: BrandColors.primary.withOpacity(0.1)),
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(BrandRadius.xxl),
+        border: Border.all(color: theme.primaryColor.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.auto_awesome, color: BrandColors.accent, size: 24),
+              const Icon(
+                Icons.auto_awesome,
+                color: BrandColors.accent,
+                size: 24,
+              ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 "Generate with AI",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: BrandColors.textDark,
+                style: BrandTypography.h5.copyWith(
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],
@@ -368,14 +345,19 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
           TextField(
             controller: _aiPromptController,
             maxLines: 2,
+            style: BrandTypography.bodyRegular.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
             decoration: InputDecoration(
               hintText:
                   "Describe your dream room (e.g., 'Modern minimalist living room with beige tones')...",
-              hintStyle: TextStyle(color: BrandColors.textHint, fontSize: 13),
+              hintStyle: BrandTypography.bodySmall.copyWith(
+                color: theme.hintColor,
+              ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: theme.inputDecorationTheme.fillColor,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(BrandRadius.xl),
                 borderSide: BorderSide.none,
               ),
               contentPadding: const EdgeInsets.all(16),
@@ -387,10 +369,10 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
             child: OutlinedButton(
               onPressed: _isGenerating ? null : _generateAiImage,
               style: OutlinedButton.styleFrom(
-                foregroundColor: BrandColors.primary,
-                side: const BorderSide(color: BrandColors.primary),
+                foregroundColor: theme.primaryColor,
+                side: BorderSide(color: theme.primaryColor),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(BrandRadius.xl),
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
@@ -401,11 +383,16 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          BrandColors.primary,
+                          theme.primaryColor,
                         ),
                       ),
                     )
-                  : const Text("Generate Image"),
+                  : Text(
+                      "Generate Image",
+                      style: BrandTypography.h5.copyWith(
+                        color: theme.primaryColor,
+                      ),
+                    ),
             ),
           ),
         ],

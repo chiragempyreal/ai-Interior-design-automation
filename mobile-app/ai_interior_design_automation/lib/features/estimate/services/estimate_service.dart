@@ -10,7 +10,8 @@ import '../models/estimate_model.dart';
 
 class EstimateService {
   // Get API key from environment variable
-  static String get _apiKey => dotenv.env['GEMINI_API_KEY'] ?? 'AIzaSyCDNDZzkQhsc9fXavt_woHlv_RyFnWm_Ro';
+  static String get _apiKey =>
+      dotenv.env['GEMINI_API_KEY'] ?? 'AIzaSyCDNDZzkQhsc9fXavt_woHlv_RyFnWm_Ro';
   static const String _baseUrl =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
@@ -24,13 +25,16 @@ class EstimateService {
   }) async {
     // 1. Analyze the Input Image to get Structural Context
     String? structuralContext;
-    
+
     // We prioritize using our local robust analysis over the external service to ensure
     // the image is actually "seen" by Gemini.
     if (project.photoPaths.isNotEmpty) {
       try {
         // Pass 'project' so we can access style/area for the meta-prompt
-        structuralContext = await _analyzeImageStructure(project, project.photoPaths.first);
+        structuralContext = await _analyzeImageStructure(
+          project,
+          project.photoPaths.first,
+        );
       } catch (e) {
         print("Structure analysis failed: $e");
       }
@@ -41,7 +45,13 @@ class EstimateService {
     try {
       // For demo/offline mode, return calculated estimate
       if (_apiKey.isEmpty || _apiKey == "YOUR_GEMINI_API_KEY") {
-        return _calculateEstimate(project, scope, costConfig, prompt, structuralContext);
+        return _calculateEstimate(
+          project,
+          scope,
+          costConfig,
+          prompt,
+          structuralContext,
+        );
       }
 
       // Call Gemini API for Estimate Explanation (Text Only)
@@ -52,23 +62,26 @@ class EstimateService {
           'contents': [
             {
               'parts': [
-                {'text': prompt}
-              ]
-            }
+                {'text': prompt},
+              ],
+            },
           ],
-          'generationConfig': {
-             'temperature': 0.5,
-             'maxOutputTokens': 2048,
-          }
+          'generationConfig': {'temperature': 0.5, 'maxOutputTokens': 2048},
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final aiResponse = data['candidates'][0]['content']['parts'][0]['text'];
-        
+
         // Use AI response as explanation, but calculate costs ourselves
-        final estimate = _calculateEstimate(project, scope, costConfig, prompt, structuralContext);
+        final estimate = _calculateEstimate(
+          project,
+          scope,
+          costConfig,
+          prompt,
+          structuralContext,
+        );
         return estimate.copyWith(explanation: aiResponse);
       } else {
         throw Exception('Failed to generate estimate: ${response.statusCode}');
@@ -76,11 +89,11 @@ class EstimateService {
     } catch (e) {
       // Fallback to calculated estimate
       return _calculateEstimate(
-          project, 
-          scope, 
-          costConfig, 
-          prompt, 
-          structuralContext
+        project,
+        scope,
+        costConfig,
+        prompt,
+        structuralContext,
       );
     }
   }
@@ -90,7 +103,10 @@ class EstimateService {
     String? structuralContext;
     if (project.photoPaths.isNotEmpty) {
       try {
-        structuralContext = await _analyzeImageStructure(project, project.photoPaths.first);
+        structuralContext = await _analyzeImageStructure(
+          project,
+          project.photoPaths.first,
+        );
       } catch (e) {
         print("Refresh analysis failed: $e");
       }
@@ -98,7 +114,11 @@ class EstimateService {
     return _generateDesignImageUrl(project, structuralContext);
   }
 
-  String _buildEstimatePrompt(ProjectModel project, ScopeModel scope, CostConfigModel costConfig) {
+  String _buildEstimatePrompt(
+    ProjectModel project,
+    ScopeModel scope,
+    CostConfigModel costConfig,
+  ) {
     return '''
 Generate a detailed budget estimate explanation for:
 
@@ -132,31 +152,35 @@ Keep it professional and client-friendly.
 
     // 1. Design Fees
     final designFee = _calculateDesignFee(area, costConfig.designFees);
-    items.add(EstimateItem(
-      id: _uuid.v4(),
-      category: EstimateCategory.design,
-      description: "Complete Interior Design Services",
-      quantity: area,
-      unit: "sq ft",
-      rate: costConfig.designFees.perSqFtRate,
-      amount: designFee,
-      notes: "Includes concept design, 3D renders, and supervision",
-    ));
+    items.add(
+      EstimateItem(
+        id: _uuid.v4(),
+        category: EstimateCategory.design,
+        description: "Complete Interior Design Services",
+        quantity: area,
+        unit: "sq ft",
+        rate: costConfig.designFees.perSqFtRate,
+        amount: designFee,
+        notes: "Includes concept design, 3D renders, and supervision",
+      ),
+    );
 
     // 2. Calculate costs from scope tasks
     for (final phase in scope.phases) {
       for (final task in phase.tasks) {
         if (task.estimatedCost > 0) {
-          items.add(EstimateItem(
-            id: _uuid.v4(),
-            category: _mapTaskToCategory(task.name),
-            description: task.name,
-            quantity: 1,
-            unit: "item",
-            rate: task.estimatedCost,
-            amount: task.estimatedCost,
-            notes: task.description,
-          ));
+          items.add(
+            EstimateItem(
+              id: _uuid.v4(),
+              category: _mapTaskToCategory(task.name),
+              description: task.name,
+              quantity: 1,
+              unit: "item",
+              rate: task.estimatedCost,
+              amount: task.estimatedCost,
+              notes: task.description,
+            ),
+          );
         }
       }
     }
@@ -191,18 +215,24 @@ Keep it professional and client-friendly.
 
   double _calculateDesignFee(double area, DesignFeeConfig config) {
     final perSqFtFee = area * config.perSqFtRate;
-    return perSqFtFee > config.minFlatAmount ? perSqFtFee : config.minFlatAmount;
+    return perSqFtFee > config.minFlatAmount
+        ? perSqFtFee
+        : config.minFlatAmount;
   }
 
   EstimateCategory _mapTaskToCategory(String taskName) {
     final lower = taskName.toLowerCase();
     if (lower.contains('design') || lower.contains('concept')) {
       return EstimateCategory.design;
-    } else if (lower.contains('furniture') || lower.contains('wardrobe') || lower.contains('kitchen')) {
+    } else if (lower.contains('furniture') ||
+        lower.contains('wardrobe') ||
+        lower.contains('kitchen')) {
       return EstimateCategory.furniture;
     } else if (lower.contains('light')) {
       return EstimateCategory.lighting;
-    } else if (lower.contains('floor') || lower.contains('wall') || lower.contains('ceiling')) {
+    } else if (lower.contains('floor') ||
+        lower.contains('wall') ||
+        lower.contains('ceiling')) {
       return EstimateCategory.materials;
     } else if (lower.contains('decor') || lower.contains('accessory')) {
       return EstimateCategory.accessories;
@@ -211,77 +241,99 @@ Keep it professional and client-friendly.
     }
   }
 
-  List<EstimateItem> _getStandardMaterials(ProjectModel project, double area, CostConfigModel costConfig) {
+  List<EstimateItem> _getStandardMaterials(
+    ProjectModel project,
+    double area,
+    CostConfigModel costConfig,
+  ) {
     final items = <EstimateItem>[];
 
     // Flooring
-    items.add(EstimateItem(
-      id: _uuid.v4(),
-      category: EstimateCategory.materials,
-      description: "Vitrified Tiles - Premium Quality",
-      quantity: area,
-      unit: "sq ft",
-      rate: 80,
-      amount: area * 80,
-      notes: "800x800mm tiles with installation",
-    ));
+    items.add(
+      EstimateItem(
+        id: _uuid.v4(),
+        category: EstimateCategory.materials,
+        description: "Vitrified Tiles - Premium Quality",
+        quantity: area,
+        unit: "sq ft",
+        rate: 80,
+        amount: area * 80,
+        notes: "800x800mm tiles with installation",
+      ),
+    );
 
     // Paint
-    items.add(EstimateItem(
-      id: _uuid.v4(),
-      category: EstimateCategory.materials,
-      description: "Premium Emulsion Paint",
-      quantity: area * 2.5, // Wall area approximation
-      unit: "sq ft",
-      rate: 35,
-      amount: area * 2.5 * 35,
-      notes: "Asian Paints Royale or equivalent",
-    ));
+    items.add(
+      EstimateItem(
+        id: _uuid.v4(),
+        category: EstimateCategory.materials,
+        description: "Premium Emulsion Paint",
+        quantity: area * 2.5, // Wall area approximation
+        unit: "sq ft",
+        rate: 35,
+        amount: area * 2.5 * 35,
+        notes: "Asian Paints Royale or equivalent",
+      ),
+    );
 
     // Electrical
-    items.add(EstimateItem(
-      id: _uuid.v4(),
-      category: EstimateCategory.materials,
-      description: "Electrical Fittings & Wiring",
-      quantity: area,
-      unit: "sq ft",
-      rate: 60,
-      amount: area * 60,
-      notes: "Switches, sockets, wiring, MCB",
-    ));
+    items.add(
+      EstimateItem(
+        id: _uuid.v4(),
+        category: EstimateCategory.materials,
+        description: "Electrical Fittings & Wiring",
+        quantity: area,
+        unit: "sq ft",
+        rate: 60,
+        amount: area * 60,
+        notes: "Switches, sockets, wiring, MCB",
+      ),
+    );
 
     return items;
   }
 
-  List<EstimateItem> _getLaborCosts(ProjectModel project, double area, CostConfigModel costConfig) {
+  List<EstimateItem> _getLaborCosts(
+    ProjectModel project,
+    double area,
+    CostConfigModel costConfig,
+  ) {
     final items = <EstimateItem>[];
 
-    items.add(EstimateItem(
-      id: _uuid.v4(),
-      category: EstimateCategory.labor,
-      description: "Civil & Construction Labor",
-      quantity: area,
-      unit: "sq ft",
-      rate: 100,
-      amount: area * 100,
-      notes: "Skilled and helper labor for 60 days",
-    ));
+    items.add(
+      EstimateItem(
+        id: _uuid.v4(),
+        category: EstimateCategory.labor,
+        description: "Civil & Construction Labor",
+        quantity: area,
+        unit: "sq ft",
+        rate: 100,
+        amount: area * 100,
+        notes: "Skilled and helper labor for 60 days",
+      ),
+    );
 
-    items.add(EstimateItem(
-      id: _uuid.v4(),
-      category: EstimateCategory.labor,
-      description: "Carpenter & Finishing Work",
-      quantity: area,
-      unit: "sq ft",
-      rate: 80,
-      amount: area * 80,
-      notes: "Furniture installation and finishing",
-    ));
+    items.add(
+      EstimateItem(
+        id: _uuid.v4(),
+        category: EstimateCategory.labor,
+        description: "Carpenter & Finishing Work",
+        quantity: area,
+        unit: "sq ft",
+        rate: 80,
+        amount: area * 80,
+        notes: "Furniture installation and finishing",
+      ),
+    );
 
     return items;
   }
 
-  String _generateExplanation(ProjectModel project, double subtotal, double total) {
+  String _generateExplanation(
+    ProjectModel project,
+    double subtotal,
+    double total,
+  ) {
     return '''
 Budget Estimate Breakdown:
 
@@ -322,7 +374,7 @@ Note: Prices are indicative and may vary based on final material selection and m
     final reductionPercentage = (reductionNeeded / estimate.total) * 100;
 
     final optimizedItems = estimate.items.map((item) {
-      if (item.category == EstimateCategory.accessories || 
+      if (item.category == EstimateCategory.accessories ||
           item.category == EstimateCategory.lighting) {
         final newAmount = item.amount * 0.8;
         return item.copyWith(
@@ -333,7 +385,10 @@ Note: Prices are indicative and may vary based on final material selection and m
       return item;
     }).toList();
 
-    final newSubtotal = optimizedItems.fold<double>(0, (sum, item) => sum + item.amount);
+    final newSubtotal = optimizedItems.fold<double>(
+      0,
+      (sum, item) => sum + item.amount,
+    );
     final newTax = newSubtotal * 0.18;
     final newTotal = newSubtotal + newTax;
 
@@ -342,24 +397,34 @@ Note: Prices are indicative and may vary based on final material selection and m
       subtotal: newSubtotal,
       tax: newTax,
       total: newTotal,
-      explanation: '${estimate.explanation}\n\nOptimized to fit budget: Reduced by ${reductionPercentage.toStringAsFixed(1)}%',
+      explanation:
+          '${estimate.explanation}\n\nOptimized to fit budget: Reduced by ${reductionPercentage.toStringAsFixed(1)}%',
     );
   }
-String _generateDesignImageUrl(ProjectModel project, String? structuralContext) {
+
+  String _generateDesignImageUrl(
+    ProjectModel project,
+    String? structuralContext,
+  ) {
     final prefs = project.designPreferences;
 
     final StringBuffer promptBuilder = StringBuffer();
 
     // 1. Meta-Prompt Strategy (Pre-generated by Gemini)
     if (structuralContext != null && structuralContext.isNotEmpty) {
-       // Gemini has already written a perfect prompt for us. Use it directly.
-       promptBuilder.write(structuralContext);
+      // Gemini has already written a perfect prompt for us. Use it directly.
+      promptBuilder.write(structuralContext);
     } else {
-       // Fallback Construction
-       promptBuilder.write("A photorealistic interior design of a furnished ${project.propertyDetails.spaceTypes.join(', ')}. ");
-       promptBuilder.write("Style: ${prefs.primaryStyle}. ");
-       if (prefs.materials.flooring.isNotEmpty) promptBuilder.write("${prefs.materials.flooring} floor. ");
-       promptBuilder.write("8k resolution, cinematic lighting, architectural digest.");
+      // Fallback Construction
+      promptBuilder.write(
+        "A photorealistic interior design of a furnished ${project.propertyDetails.spaceTypes.join(', ')}. ",
+      );
+      promptBuilder.write("Style: ${prefs.primaryStyle}. ");
+      if (prefs.materials.flooring.isNotEmpty)
+        promptBuilder.write("${prefs.materials.flooring} floor. ");
+      promptBuilder.write(
+        "8k resolution, cinematic lighting, architectural digest.",
+      );
     }
 
     final encoded = Uri.encodeComponent(promptBuilder.toString());
@@ -370,8 +435,12 @@ String _generateDesignImageUrl(ProjectModel project, String? structuralContext) 
     // Using Flux model handles complex, multi-part prompts like this best.
     return "https://image.pollinations.ai/prompt/$encoded?width=1024&height=768&nologo=true&seed=$seed&model=flux";
   }
+
   /// New Method: Sends the image file to Gemini to get a "Visual Blueprint"
-  Future<String?> _analyzeImageStructure(ProjectModel project, String imagePath) async {
+  Future<String?> _analyzeImageStructure(
+    ProjectModel project,
+    String imagePath,
+  ) async {
     if (_apiKey.isEmpty) return null;
 
     try {
@@ -380,34 +449,28 @@ String _generateDesignImageUrl(ProjectModel project, String? structuralContext) 
 
       final bytes = await file.readAsBytes();
       final base64Image = base64Encode(bytes);
-      
-      final area = "${project.propertyDetails.carpetArea} sq ft";
-      final spaceType = project.propertyDetails.spaceTypes.join(', ');
+
       final style = project.designPreferences.primaryStyle;
 
-      // User's requested Role-Based Prompt Strategy
-      final structurePrompt = """
+      // CHANGED: This prompt now focuses on GEOMETRY and CAMERA ANGLE, not design.
+      final structurePrompt =
+          """
 ### ROLE
-You are an expert Interior Designer and AI Prompt Engineer.
+You are a 3D Spatial Scanner.
 
 ### TASK
-Analyze the attached image. The user wants to furnish this specific empty area.
-Context:
-- Room Type: $spaceType
-- Size: $area
-- Desired Style: $style
-
-Identify the room's permanent structure (walls, windows, flooring type, ceiling elements) which MUST be preserved.
-Then, suggest furniture placement that fits this exact location without changing the building structure.
+Analyze the input image geometry. Do not describe the furniture. Describe the SCENE COMPOSITION for a 3D artist to recreate this exact camera angle.
 
 ### OUTPUT
-Return a strictly valid JSON object (no markdown) with two keys:
-1. "furniture_items": List of strings (suggested furniture).
-2. "image_generation_prompt": A highly detailed, photorealistic text-to-image prompt to generate the NEW design of this room. 
-   - Start with "A photorealistic shot of..."
-   - Explicitly describe the camera angle and building shell from the image.
-   - Describe the new $style furniture and decor placed naturally.
-   - Mention lighting (e.g. "cinematic lighting") and quality (e.g. "8k").
+Return a single JSON object with key "image_generation_prompt".
+The value must be a prompt following this specific template:
+"A [wide/narrow] angle architectural shot of a [room type]. The camera is positioned at [eye-level/high-angle/low-angle]. 
+On the LEFT side of the frame is [describe wall/window/feature]. 
+On the RIGHT side of the frame is [describe wall/window/feature]. 
+The CENTER contains [floor space/wall]. 
+The lighting comes from [source] on the [left/right].
+The empty structural shell is preserved, but furnished with new $style furniture including [suggest 2-3 items].
+High resolution, photorealistic, 8k, interior design photography."
 """;
 
       final response = await http.post(
@@ -420,34 +483,36 @@ Return a strictly valid JSON object (no markdown) with two keys:
                 {'text': structurePrompt},
                 {
                   'inline_data': {
-                    'mime_type': 'image/jpeg', 
-                    'data': base64Image
-                  }
-                }
-              ]
-            }
+                    'mime_type':
+                        'image/jpeg', // Ensure this matches your file type
+                    'data': base64Image,
+                  },
+                },
+              ],
+            },
           ],
           'generationConfig': {
-            'temperature': 0.4,
+            'temperature':
+                0.2, // Lower temperature for more precise/robotic descriptions
             'maxOutputTokens': 500,
-            'response_mime_type': 'application/json', // Force JSON output
-          }
+            'response_mime_type': 'application/json',
+          },
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final jsonText = data['candidates'][0]['content']['parts'][0]['text'];
-        print("Gemini JSON Response: $jsonText"); 
-        
+
         try {
-           final parsed = jsonDecode(jsonText);
-           // We return the engineered prompt for the image generator
-           return parsed['image_generation_prompt'];
+          final parsed = jsonDecode(jsonText);
+          return parsed['image_generation_prompt'];
         } catch (e) {
-           print("JSON Parse Error: $e");
-           // Fallback if JSON fails but text exists (remove markdown)
-           return jsonText.replaceAll('```json', '').replaceAll('```', '');
+          // Fallback cleanup if JSON is messy
+          return jsonText
+              .replaceAll('```json', '')
+              .replaceAll('```', '')
+              .trim();
         }
       }
     } catch (e) {
