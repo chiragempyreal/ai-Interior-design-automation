@@ -13,6 +13,7 @@ export interface IQuote extends Document {
   version: number;
   status: 'draft' | 'sent' | 'approved' | 'rejected';
   validUntil: Date;
+  pdfUrl?: string;
 }
 
 const QuoteSchema: Schema = new Schema(
@@ -35,6 +36,7 @@ const QuoteSchema: Schema = new Schema(
       default: 'draft',
     },
     validUntil: { type: Date },
+    pdfUrl: { type: String },
   },
   { timestamps: true }
 );

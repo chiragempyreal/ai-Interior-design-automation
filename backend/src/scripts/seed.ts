@@ -37,11 +37,11 @@ const seedSuperAdmin = async () => {
         return;
     }
 
-    const superAdminEmail = 'admin@example.com';
+    const superAdminEmail = 'admin@interiorai.com';
     const existingAdmin = await User.findOne({ email: superAdminEmail });
 
     if (!existingAdmin) {
-        const hashedPassword = await bcrypt.hash('password123', 10);
+        const hashedPassword = await bcrypt.hash('D14=XZ0iBh8]', 10);
         await User.create({
             role_id: adminRole._id,
             full_name: 'Super Admin',

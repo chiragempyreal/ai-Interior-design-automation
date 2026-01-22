@@ -5,8 +5,7 @@ import {
   FolderKanban, 
   Users, 
   Settings, 
-  LogOut,
-  Hexagon
+  LogOut
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
@@ -29,10 +28,11 @@ const Sidebar: React.FC = () => {
     <div className="w-64 bg-surface border-r border-border h-screen sticky top-0 flex flex-col transition-all duration-300">
       <div className="h-24 flex items-center px-8 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="bg-primary/10 p-2 rounded-xl">
-            <Hexagon className="w-6 h-6 text-primary fill-current" />
+          <div className="relative w-6 h-6">
+            <div className="absolute inset-0 border-[1.5px] border-primary rounded-full"></div>
+            <div className="absolute inset-0 border-[1.5px] border-accent-warm rounded-full translate-x-1.5"></div>
           </div>
-          <span className="text-xl font-bold font-display text-text tracking-tight">InteriAI</span>
+          <span className="font-geist text-[11px] font-bold tracking-[0.25em] uppercase ml-2 text-text">DesignQuote AI</span>
         </div>
       </div>
 

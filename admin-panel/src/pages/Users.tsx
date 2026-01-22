@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { format } from 'date-fns';
-import { Search, Filter, MoreHorizontal, ChevronLeft, ChevronRight, Mail, Shield, Trash2, Eye } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, Mail, Shield, Trash2, Eye } from 'lucide-react';
 
 interface User {
   _id: string;
@@ -15,34 +15,96 @@ interface User {
   createdAt: string;
 }
 
+import { useToast } from '@/context/ToastContext';
+import Modal from '@/components/Modal';
+
 const Users: React.FC = () => {
+  const { success, error: toastError } = useToast();
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const limit = 10;
-  const [actionOpen, setActionOpen] = useState<string | null>(null);
+
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'info' | 'warning' | 'error' | 'success';
+    actionLabel: string;
+    onAction: () => void;
+    secondaryActionLabel?: string;
+    onSecondaryAction?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info',
+    actionLabel: 'Okay',
+    onAction: () => {},
+  });
+
+  const closeModal = () => {
+    setModalConfig(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Debounce search
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page when search changes
+  React.useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['users', page],
+    queryKey: ['users', page, debouncedSearch],
     queryFn: async () => {
-      const res = await api.get(`/admin/users?page=${page}&limit=${limit}`);
+      const res = await api.get(`/admin/users?page=${page}&limit=${limit}&search=${debouncedSearch}`);
       return res.data.data;
     }
   });
 
-  const handleDelete = async (userId: string) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      try {
-        // Implement delete API call here if available, or just log for now
-        // await api.delete(`/admin/users/${userId}`);
-        console.log('Deleting user:', userId);
-        alert('Delete functionality to be implemented in backend');
-      } catch (error) {
-        console.error('Error deleting user:', error);
-      }
+  const confirmDelete = async (userId: string) => {
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      refetch();
+      success('User deleted successfully');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toastError('Failed to delete user');
     }
+  };
+
+  const handleDelete = (userId: string) => {
+    setModalConfig({
+      isOpen: true,
+      title: 'Delete User',
+      message: 'Are you sure you want to delete this user? This action cannot be undone.',
+      type: 'warning',
+      actionLabel: 'Delete',
+      onAction: () => confirmDelete(userId),
+      secondaryActionLabel: 'Cancel',
+      onSecondaryAction: closeModal
+    });
   };
 
   return (
     <div className="space-y-6">
+      <Modal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        actionLabel={modalConfig.actionLabel}
+        onAction={modalConfig.onAction}
+        secondaryActionLabel={modalConfig.secondaryActionLabel}
+        onSecondaryAction={modalConfig.onSecondaryAction}
+      />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold font-display text-text">Users</h2>
@@ -54,6 +116,8 @@ const Users: React.FC = () => {
             <input 
               type="text" 
               placeholder="Search users..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-9 pr-4 py-2 bg-white border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary w-64"
             />
           </div>
@@ -79,7 +143,7 @@ const Users: React.FC = () => {
                 </tr>
               ) : data?.users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">No users found.</td>
+                  <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">No users found matching your criteria.</td>
                 </tr>
               ) : (
                 data?.users.map((user: User) => (
@@ -137,7 +201,7 @@ const Users: React.FC = () => {
         {!isLoading && data?.pagination && (
           <div className="bg-white px-6 py-4 border-t border-border flex items-center justify-between">
             <div className="text-sm text-text-secondary">
-              Showing <span className="font-medium">{(data.pagination.page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(data.pagination.page * limit, data.pagination.total)}</span> of <span className="font-medium">{data.pagination.total}</span> results
+              Showing <span className="font-medium">{data.pagination.total === 0 ? 0 : (data.pagination.page - 1) * limit + 1}</span> to <span className="font-medium">{Math.min(data.pagination.page * limit, data.pagination.total)}</span> of <span className="font-medium">{data.pagination.total}</span> results
             </div>
             <div className="flex gap-2">
               <button 
@@ -149,7 +213,7 @@ const Users: React.FC = () => {
               </button>
               <button 
                 onClick={() => setPage(p => Math.min(data.pagination.pages, p + 1))}
-                disabled={page === data.pagination.pages}
+                disabled={page >= data.pagination.pages}
                 className="p-2 rounded-lg border border-border hover:bg-background-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-4 h-4 text-text-secondary" />

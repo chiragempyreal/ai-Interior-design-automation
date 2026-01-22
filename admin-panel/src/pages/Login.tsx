@@ -38,8 +38,17 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-primary">
-          Sign in to Admin Panel
+        <div className="flex justify-center mb-2">
+            <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10">
+                    <div className="absolute inset-0 border-[2px] border-primary rounded-full"></div>
+                    <div className="absolute inset-0 border-[2px] border-accent-warm rounded-full translate-x-2.5"></div>
+                </div>
+                <h1 className="font-geist text-lg font-bold tracking-[0.25em] uppercase ml-2 text-text">DesignQuote AI</h1>
+            </div>
+        </div>
+        <h2 className="mt-4 text-center text-2xl font-bold text-text-secondary">
+          Admin Panel
         </h2>
       </div>
 

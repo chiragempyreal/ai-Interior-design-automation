@@ -128,15 +128,38 @@ export const getProjects = async (req: Request, res: Response, next: NextFunctio
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+    const status = req.query.status as string;
     const skip = (page - 1) * limit;
 
+    const query: any = {};
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { 'user_id.full_name': { $regex: search, $options: 'i' } } // This won't work directly with simple find, need aggregation or separate query if searching on populated field
+      ];
+    }
+
+    if (status && status !== 'all') {
+      query.status = status;
+    }
+
+    // For searching on populated fields, it's complex with simple find. 
+    // Let's stick to searching on project fields for now, or perform a two-step search if needed.
+    // Simpler approach: Search on project title only for now, or use aggregation.
+    // Let's update query to search on title.
+    if (search) {
+        query.title = { $regex: search, $options: 'i' };
+    }
+
     const [projects, total] = await Promise.all([
-      Project.find()
+      Project.find(query)
         .populate('user_id', 'full_name email')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Project.countDocuments()
+      Project.countDocuments(query)
     ]);
 
     return sendSuccess(res, 'Projects retrieved successfully', {
@@ -163,16 +186,26 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
     const skip = (page - 1) * limit;
 
-    const users = await User.find({ deletedAt: null })
+    const query: any = { deletedAt: null };
+
+    if (search) {
+      query.$or = [
+        { full_name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const users = await User.find(query)
       .select('-password')
       .populate('role_id', 'name display_name')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await User.countDocuments({ deletedAt: null });
+    const total = await User.countDocuments(query);
 
     return sendSuccess(res, 'Users retrieved successfully', {
       users,
@@ -185,6 +218,37 @@ export const getUsers = async (req: Request, res: Response, next: NextFunction) 
     });
   } catch (error: any) {
     logger.error(`Admin Get Users Error: ${error.message}`);
+    next(error);
+  }
+};
+
+/**
+ * @desc    Delete User (Soft Delete)
+ * @route   DELETE /api/v1/admin/users/:id
+ * @access  Private (Admin)
+ */
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    
+    const user = await User.findById(id);
+
+    if (!user) {
+      return sendError(res, 'User not found', null, 404);
+    }
+
+    // Prevent deleting self
+    if (user._id.toString() === (req as any).user.userId) {
+      return sendError(res, 'Cannot delete your own account', null, 400);
+    }
+
+    // Soft delete
+    user.deletedAt = new Date();
+    await user.save();
+
+    return sendSuccess(res, 'User deleted successfully', null);
+  } catch (error: any) {
+    logger.error(`Admin Delete User Error: ${error.message}`);
     next(error);
   }
 };
@@ -238,13 +302,12 @@ export const updateProfile = async (req: Request, res: Response, next: NextFunct
 export const changePassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    const userId = (req as any).user.userId;
+    // req.user is attached by the protect middleware and contains the full user document
+    const user = (req as any).user;
 
     if (!currentPassword || !newPassword) {
       return sendError(res, 'Please provide current and new password', null, 400);
     }
-
-    const user = await User.findById(userId);
 
     if (!user) {
       return sendError(res, 'User not found', null, 404);

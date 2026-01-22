@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, User } from 'lucide-react';
+import { User } from 'lucide-react';
 
 const Header: React.FC = () => {
   return (
@@ -8,11 +8,11 @@ const Header: React.FC = () => {
         <h2 className="text-xl font-medium text-text font-serif">Overview</h2>
       </div>
       <div className="flex items-center space-x-6">
-        <button className="relative p-2.5 text-text-secondary hover:text-primary rounded-full hover:bg-background transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20">
+        {/* <button className="relative p-2.5 text-text-secondary hover:text-primary rounded-full hover:bg-background transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20">
           <Bell className="h-6 w-6" />
           <span className="absolute top-2.5 right-2.5 h-2.5 w-2.5 rounded-full bg-error border-2 border-surface"></span>
-        </button>
-        <div className="h-8 w-px bg-border mx-2"></div>
+        </button> */}
+        {/* <div className="h-8 w-px bg-border mx-2"></div> */}
         <div className="flex items-center gap-4 pl-2 cursor-pointer group">
           <div className="flex flex-col items-end hidden sm:flex">
             <span className="text-sm font-semibold text-text group-hover:text-primary transition-colors">Admin User</span>

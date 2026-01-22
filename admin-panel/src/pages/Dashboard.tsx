@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, DollarSign, Briefcase, Clock, Users, CheckCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '@/services/api';
 import { format } from 'date-fns';
 
@@ -60,6 +61,7 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ElementType
 );
 
 const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { data: statsData, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['adminStats'],
     queryFn: async () => {
@@ -135,12 +137,21 @@ const Dashboard: React.FC = () => {
         <div className="lg:col-span-2 bg-surface rounded-2xl shadow-sm border border-border/60 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-text font-serif">Recent Projects</h3>
-            <button className="text-sm text-primary font-medium hover:text-primary-dark transition-colors">View All</button>
+            <button 
+              onClick={() => navigate('/projects')}
+              className="text-sm text-primary font-medium hover:text-primary-dark transition-colors"
+            >
+              View All
+            </button>
           </div>
           
           <div className="space-y-4">
             {pendingProjects?.slice(0, 5).map((project) => (
-              <div key={project._id} className="flex items-center justify-between p-4 rounded-xl hover:bg-background-light transition-colors group border border-transparent hover:border-border/40">
+              <div 
+                key={project._id} 
+                onClick={() => navigate(`/projects/${project._id}`)}
+                className="flex items-center justify-between p-4 rounded-xl hover:bg-background-light transition-colors group border border-transparent hover:border-border/40 cursor-pointer"
+              >
                 <div className="flex items-center gap-4">
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">
                     {project.title.substring(0, 2).toUpperCase()}
@@ -178,15 +189,24 @@ const Dashboard: React.FC = () => {
         <div className="bg-surface rounded-2xl shadow-sm border border-border/60 p-6">
           <h3 className="text-lg font-bold text-text font-serif mb-6">Quick Actions</h3>
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary">
+            <button 
+              onClick={() => navigate('/projects')}
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary"
+            >
               <span className="font-medium text-sm">Create New Quote</span>
               <DollarSign className="h-4 w-4" />
             </button>
-            <button className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary">
+            <button 
+              onClick={() => navigate('/projects?status=submitted')}
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary"
+            >
               <span className="font-medium text-sm">Review Pending Requests</span>
               <Clock className="h-4 w-4" />
             </button>
-            <button className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary">
+            <button 
+              onClick={() => navigate('/users')}
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary"
+            >
               <span className="font-medium text-sm">Manage Users</span>
               <Users className="h-4 w-4" />
             </button>

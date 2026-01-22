@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/adminController';
+import * as quoteController from '../controllers/quoteController';
 import { protect } from '../middleware/authMiddleware';
 import { authorize } from '../middleware/roleMiddleware';
 
@@ -104,6 +105,26 @@ router.get('/users', adminController.getUsers);
 
 /**
  * @swagger
+ * /admin/users/{id}:
+ *   delete:
+ *     summary: Delete a user (soft delete)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ */
+router.delete('/users/:id', adminController.deleteUser);
+
+/**
+ * @swagger
  * /admin/profile:
  *   put:
  *     summary: Update admin profile
@@ -154,5 +175,101 @@ router.put('/profile', adminController.updateProfile);
  *         description: Password updated
  */
 router.put('/change-password', adminController.changePassword);
+
+/**
+ * @swagger
+ * /admin/quotes/generate:
+ *   post:
+ *     summary: Generate AI Quote
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - projectId
+ *             properties:
+ *               projectId:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Quote generated
+ */
+router.post('/quotes/generate', quoteController.generateQuote);
+
+/**
+ * @swagger
+ * /admin/quotes/{id}:
+ *   put:
+ *     summary: Update Quote Items
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - items
+ *             properties:
+ *               items:
+ *                 type: array
+ *     responses:
+ *       200:
+ *         description: Quote updated
+ */
+router.put('/quotes/:id', quoteController.updateQuote);
+
+/**
+ * @swagger
+ * /admin/quotes/{id}/preview:
+ *   post:
+ *     summary: Preview Quote (Generate PDF)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Quote preview generated
+ */
+router.post('/quotes/:id/preview', quoteController.previewQuote);
+
+/**
+ * @swagger
+ * /admin/quotes/{id}/finalize:
+ *   post:
+ *     summary: Finalize Quote (Generate PDF & Send)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Quote finalized
+ */
+router.post('/quotes/:id/finalize', quoteController.finalizeQuote);
 
 export default router;

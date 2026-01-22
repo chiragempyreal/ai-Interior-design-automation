@@ -3,6 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import * as projectController from '../controllers/projectController';
+import * as quoteController from '../controllers/quoteController';
 import { protect } from '../middleware/authMiddleware';
 
 const router = Router();
@@ -313,6 +314,26 @@ router.get('/:id', projectController.getProject); // Get can remain public for s
  *                   $ref: '#/components/schemas/Project'
  */
 router.post('/:id/upload', protect, upload.array('photos', 5), projectController.uploadProjectImages);
+
+/**
+ * @swagger
+ * /projects/{id}/quote:
+ *   get:
+ *     summary: Get project quote
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Project quote
+ */
+router.get('/:projectId/quote', protect, quoteController.getQuoteByProject);
 
 /**
  * @swagger

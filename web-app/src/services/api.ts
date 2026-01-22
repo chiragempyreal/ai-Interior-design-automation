@@ -25,11 +25,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Optional: Redirect to login or show modal
-      // window.location.href = '/login'; 
+    if (error.response) {
+      if (error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      } else if (error.response.status === 500) {
+        window.dispatchEvent(new CustomEvent('api-error', { 
+          detail: { 
+            title: 'Server Error', 
+            message: error.response.data?.message || 'An unexpected server error occurred. Please try again later.' 
+          } 
+        }));
+      }
     }
     return Promise.reject(error);
   }

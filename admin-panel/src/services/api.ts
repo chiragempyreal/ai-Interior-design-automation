@@ -16,7 +16,34 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response) {
+      if (error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      } else if (error.response.status === 500) {
+        window.dispatchEvent(new CustomEvent('api-error', { 
+          detail: { 
+            title: 'Server Error', 
+            message: error.response.data?.message || 'An unexpected server error occurred. Please try again later.' 
+          } 
+        }));
+      }
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default api;

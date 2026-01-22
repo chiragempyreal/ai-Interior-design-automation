@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { User, Lock, Bell, Globe } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 import api from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
 
+import { useToast } from '@/context/ToastContext';
+
 const Settings: React.FC = () => {
+  const { success, error: toastError } = useToast();
   const [loading, setLoading] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '' });
   const [profileData, setProfileData] = useState({ full_name: '', email: '' });
@@ -37,9 +40,10 @@ const Settings: React.FC = () => {
       // Update local storage if successful
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({ ...currentUser, ...res.data.data }));
-      alert('Profile updated successfully');
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to update profile');
+      success('Profile updated successfully');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toastError(err.response?.data?.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -50,10 +54,11 @@ const Settings: React.FC = () => {
     setLoading(true);
     try {
       await api.put('/admin/change-password', passwordData);
-      alert('Password updated successfully');
+      success('Password updated successfully');
       setPasswordData({ currentPassword: '', newPassword: '' });
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to update password');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toastError(err.response?.data?.message || 'Failed to update password');
     } finally {
       setLoading(false);
     }
@@ -82,6 +87,7 @@ const Settings: React.FC = () => {
                 <label className="text-sm font-medium text-text-secondary">Full Name</label>
                 <input 
                   type="text" 
+                  readOnly
                   value={profileData.full_name}
                   onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
                   className="w-full px-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -91,6 +97,7 @@ const Settings: React.FC = () => {
                 <label className="text-sm font-medium text-text-secondary">Email Address</label>
                 <input 
                   type="email" 
+                  readOnly
                   value={profileData.email}
                   onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                   className="w-full px-4 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -98,7 +105,7 @@ const Settings: React.FC = () => {
               </div>
             </div>
             
-            <div className="mt-6 flex justify-end">
+            {/* <div className="mt-6 flex justify-end">
               <button 
                 type="submit" 
                 disabled={loading}
@@ -106,7 +113,7 @@ const Settings: React.FC = () => {
               >
                 {loading ? 'Saving...' : 'Save Changes'}
               </button>
-            </div>
+            </div> */}
           </form>
         </div>
 
@@ -154,16 +161,6 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
               </form>
-            </div>
-            
-            <div className="flex items-center justify-between p-4 bg-background-light rounded-lg border border-border/50">
-              <div>
-                <h4 className="text-sm font-medium text-text">Two-Factor Authentication</h4>
-                <p className="text-xs text-text-secondary mt-1">Add an extra layer of security to your account.</p>
-              </div>
-              <div className="relative inline-block w-10 h-5 transition duration-200 ease-in-out rounded-full bg-border cursor-pointer">
-                <span className="absolute left-0 inline-block w-5 h-5 bg-white border border-gray-300 rounded-full shadow transform transition-transform duration-200 ease-in-out translate-x-0"></span>
-              </div>
             </div>
           </div>
         </div>
