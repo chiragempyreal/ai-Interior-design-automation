@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/brand_colors.dart';
+import '../../auth/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -21,8 +21,8 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _navigateToDashboard() async {
     await Future.delayed(const Duration(seconds: 3));
     if (mounted) {
-      final prefs = await SharedPreferences.getInstance();
-      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      final authService = AuthService();
+      final isLoggedIn = await authService.isLoggedIn();
 
       if (isLoggedIn) {
         context.go('/dashboard');

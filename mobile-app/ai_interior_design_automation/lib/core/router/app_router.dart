@@ -5,7 +5,8 @@ import '../../features/dashboard/screens/dashboard_screen.dart';
 import '../../features/project/screens/create_project_screen.dart';
 import '../../features/project/models/project_model.dart';
 import '../../features/visualizer/screens/image_input_screen.dart';
-import '../../features/quote/screens/quote_review_screen.dart'; // Corrected Import
+import '../../features/project/screens/project_preview_screen.dart';
+import '../../features/quote/screens/quote_review_screen.dart';
 import '../../features/ai_scope/screens/scope_generator_screen.dart';
 import '../../features/ai_scope/screens/scope_details_screen.dart';
 import '../../features/ai_scope/models/scope_model.dart';
@@ -19,6 +20,8 @@ final appRouter = GoRouter(
   routes: [
     // Splash Screen
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+
+    // Client Routes
     GoRoute(
       path: '/dashboard',
       builder: (context, state) => const DashboardScreen(),
@@ -42,10 +45,7 @@ final appRouter = GoRouter(
           project = state.extra as ProjectModel;
         }
 
-        return ImageInputScreen(
-          project: project,
-          autoPickSource: source,
-        ); // Passes source
+        return ImageInputScreen(project: project, autoPickSource: source);
       },
     ),
     GoRoute(
@@ -86,13 +86,20 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: '/quote-review', // Changed from /quote
+      path: '/quote-review',
       builder: (context, state) {
         final extras = state.extra as Map<String, dynamic>;
         return QuoteReviewScreen(
           estimate: extras['estimate'] as EstimateModel,
           project: extras['project'] as ProjectModel,
         );
+      },
+    ),
+    GoRoute(
+      path: '/project-preview',
+      builder: (context, state) {
+        final project = state.extra as ProjectModel;
+        return ProjectPreviewScreen(project: project);
       },
     ),
   ],
