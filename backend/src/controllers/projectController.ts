@@ -1,4 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import fs from 'fs';
+import path from 'path';
 import OpenAI from 'openai';
 import Project from '../models/Project';
 import Quote from '../models/Quote';
@@ -223,9 +225,60 @@ export const generateAIPreview = async (req: Request, res: Response, next: NextF
     const furniture = materials.furniture ? `, ${materials.furniture} furniture` : '';
     const lighting = materials.lighting ? materials.lighting : 'Ambient';
 
+    // Initialize OpenAI client dynamically
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // 0. Analyze Existing Image Structure (Vision)
+    let structuralDescription = '';
+    
+    if (project.photos && project.photos.length > 0) {
+      try {
+        const photoUrl = project.photos[0];
+        // Check if it's a local upload
+        if (photoUrl.startsWith('/uploads/')) {
+           const filename = photoUrl.split('/').pop();
+           if (filename) {
+             const uploadsDir = path.join(__dirname, '../../uploads/projects');
+             const filePath = path.join(uploadsDir, filename);
+             
+             if (fs.existsSync(filePath)) {
+               logger.info(`Analyzing image for structure: ${filePath}`);
+               const imageBuffer = fs.readFileSync(filePath);
+               const base64Image = imageBuffer.toString('base64');
+               const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+               
+               const visionResponse = await openai.chat.completions.create({
+                 model: "gpt-4o",
+                 messages: [
+                   {
+                     role: "user",
+                     content: [
+                       { type: "text", text: "Analyze this interior image. Describe the room's architectural structure, layout, perspective, ceiling height, window placement, and flooring type in detail. Do NOT describe the furniture style or colors. Focus on the physical shell of the room. Your description will be used to recreate this exact room structure." },
+                       { type: "image_url", image_url: { url: dataUrl } }
+                     ],
+                   },
+                 ],
+                 max_tokens: 300,
+               });
+               
+               structuralDescription = visionResponse.choices[0].message.content || '';
+               logger.info(`Generated Structural Description: ${structuralDescription}`);
+             } else {
+                logger.warn(`Image file not found at path: ${filePath}`);
+             }
+           }
+        }
+      } catch (visionError: any) {
+        logger.warn(`Vision Analysis Failed: ${visionError.message}`);
+        // Continue without structure
+      }
+    }
+
     // 1. Generate Optimized Prompt using GPT-3.5-Turbo
     // We use the "Master Prompt" template which instructs GPT to create a perfect DALL-E prompt
-    const systemPrompt = generateInteriorDesignPrompt({
+    let systemPrompt = generateInteriorDesignPrompt({
       style,
       space,
       projectType: type,
@@ -237,10 +290,9 @@ export const generateAIPreview = async (req: Request, res: Response, next: NextF
       lighting
     });
 
-    // Initialize OpenAI client dynamically
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    if (structuralDescription) {
+        systemPrompt += `\n\nIMPORTANT: The user provided an existing room image. The generated image MUST match this structural description exactly:\n"${structuralDescription}"\n\nCombine this structure with the requested ${style} style. Ensure the room layout, perspective, and architectural elements match the description.`;
+    }
 
     // 1.5 Generate Optimized Prompt using GPT-3.5-Turbo
     // The "systemPrompt" is a set of instructions for GPT, NOT for DALL-E.
@@ -248,7 +300,7 @@ export const generateAIPreview = async (req: Request, res: Response, next: NextF
       messages: [{ role: 'system', content: systemPrompt }],
       model: 'gpt-3.5-turbo',
       temperature: 0.7,
-      max_tokens: 300,
+      max_tokens: 500,
     });
 
     const optimizedPrompt = completion.choices[0].message.content || '';
@@ -258,15 +310,17 @@ export const generateAIPreview = async (req: Request, res: Response, next: NextF
       throw new Error('Failed to generate prompt from GPT');
     }
     console.log('optimizedPrompt', optimizedPrompt);
-    // 2. Generate Image using DALL-E 2 with the optimized prompt
+    // 2. Generate Image using DALL-E 3 with the optimized prompt
     // Use the already initialized client
     
     // START: PARALLEL GENERATION (Image + Smart Analysis)
     const imagePromise = openai.images.generate({
-      model: "dall-e-2", // Optimized for cost
-      prompt: optimizedPrompt.substring(0, 1000), // Ensure limit
+      model: "dall-e-3", // Upgraded to DALL-E 3 for better prompt adherence
+      prompt: optimizedPrompt.substring(0, 4000), // DALL-E 3 supports longer prompts
       n: 1,
       size: "1024x1024",
+      quality: "standard",
+      style: "vivid" // or natural
     });
 
     const analysisPrompt = generateAnalysisPrompt({
