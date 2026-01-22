@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/project_model.dart';
 import '../services/project_service.dart';
 
@@ -74,16 +75,11 @@ class ProjectProvider extends ChangeNotifier {
 
   // Generate Preview (AI)
   Future<dynamic> generatePreview(String projectId) async {
-    _isLoading = true;
-    notifyListeners();
-
     try {
       return await _projectService.generatePreview(projectId);
     } catch (e) {
       _error = e.toString();
       rethrow;
-    } finally {
-      notifyListeners();
     }
   }
 

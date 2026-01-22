@@ -20,6 +20,7 @@ class ProjectModel {
   final TechnicalRequirements technicalRequirements;
   final List<String> photoPaths;
   final List<String> inspirationPaths;
+  final String? aiPreviewUrl; // AI-generated preview image URL from backend
   final DateTime createdAt;
   final ProjectStatus status;
 
@@ -32,6 +33,7 @@ class ProjectModel {
     required this.technicalRequirements,
     this.photoPaths = const [],
     this.inspirationPaths = const [],
+    this.aiPreviewUrl,
     DateTime? createdAt,
     this.status = ProjectStatus.draft,
   }) : id = id ?? const Uuid().v4(),
@@ -45,6 +47,7 @@ class ProjectModel {
     TechnicalRequirements? technicalRequirements,
     List<String>? photoPaths,
     List<String>? inspirationPaths,
+    String? aiPreviewUrl,
   }) {
     return ProjectModel(
       id: id,
@@ -56,6 +59,7 @@ class ProjectModel {
           technicalRequirements ?? this.technicalRequirements,
       photoPaths: photoPaths ?? this.photoPaths,
       inspirationPaths: inspirationPaths ?? this.inspirationPaths,
+      aiPreviewUrl: aiPreviewUrl ?? this.aiPreviewUrl,
       createdAt: createdAt,
       status: status ?? this.status,
     );
@@ -75,6 +79,7 @@ class ProjectModel {
       ), // Fallback or map from root
       photoPaths:
           (json['photos'] as List?)?.map((e) => e.toString()).toList() ?? [],
+      aiPreviewUrl: json['previewUrl'] ?? json['aiPreviewUrl'],
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : null,

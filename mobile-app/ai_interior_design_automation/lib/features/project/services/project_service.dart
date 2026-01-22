@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
+
 import '../../../core/api/api_client.dart';
 import '../../../core/constants/api_constants.dart';
 import '../models/project_model.dart';
-import 'package:http_parser/http_parser.dart';
 
 class ProjectService {
   final ApiClient _apiClient = ApiClient();
@@ -95,7 +95,8 @@ class ProjectService {
       print("DEBUG: Create Project Response: ${response.data}");
 
       // Return the created project model from response
-      return ProjectModel.fromJson(response.data);
+      // Backend returns: { success: true, data: { _id: "...", ... } }
+      return ProjectModel.fromJson(response.data['data']);
     } catch (e) {
       if (e is DioException) {
         print(
@@ -108,73 +109,51 @@ class ProjectService {
 
   // Upload Photos
   Future<void> uploadPhotos(String projectId, List<String> filePaths) async {
-    if (filePaths.isEmpty) return;
+    if (filePaths.isEmpty) {
+      debugPrint("No images selected, skipping upload.");
+      return; // 🔥 IMPORTANT FIX
+    }
 
     try {
-      // Build list of MultipartFile objects
-      List<MultipartFile> photoFiles = [];
+      final formData = FormData();
 
-      for (var path in filePaths) {
-        final file = File(path);
-        String fileName = path.split('/').last;
-
-        // Determine content type based on file extension
-        String extension = fileName.split('.').last.toLowerCase();
-        MediaType contentType;
-
-        switch (extension) {
-          case 'jpg':
-          case 'jpeg':
-            contentType = MediaType('image', 'jpeg');
-            break;
-          case 'png':
-            contentType = MediaType('image', 'png');
-            break;
-          case 'webp':
-            contentType = MediaType('image', 'webp');
-            break;
-          default:
-            contentType = MediaType('image', 'jpeg');
-        }
-
-        photoFiles.add(
-          await MultipartFile.fromFile(
-            file.path,
-            filename: fileName,
-            contentType: contentType,
-          ),
+      for (final path in filePaths) {
+        formData.files.add(
+          MapEntry("photos", await MultipartFile.fromFile(path)),
         );
       }
 
-      // Create FormData with photos array
-      final formData = FormData.fromMap({'photos': photoFiles});
-
-      print(
-        "DEBUG: Uploading ${photoFiles.length} photos to project $projectId",
-      );
-
-      await _apiClient.post(
+      final response = await _apiClient.post(
         ApiConstants.projectUpload(projectId),
         data: formData,
+        options: Options(contentType: 'multipart/form-data'),
       );
 
-      print("DEBUG: Photos uploaded successfully");
+      debugPrint("✅ Upload success: ${response.data}");
     } catch (e) {
-      if (e is DioException) {
-        print(
-          "DEBUG: Upload Photos API Error: ${e.response?.statusCode} - ${e.response?.data}",
-        );
-      }
-      throw Exception("Failed to upload photos: $e");
+      debugPrint("❌ Upload failed: $e");
+      throw Exception("Upload failed");
     }
   }
 
   // Generate Preview (AI Trigger)
   Future<dynamic> generatePreview(String projectId) async {
     try {
+      // AI processing can take longer, so increase timeout to 120 seconds
       final response = await _apiClient.post(
         ApiConstants.projectPreview(projectId),
+        data: {"projectId": projectId},
+        options: Options(
+          receiveTimeout: const Duration(seconds: 120), // 2 minutes for AI
+        ),
       );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          response.data?['message'] ?? "Preview generation failed",
+        );
+      }
+
       return response.data;
     } catch (e) {
       throw Exception("AI preview generation failed: $e");

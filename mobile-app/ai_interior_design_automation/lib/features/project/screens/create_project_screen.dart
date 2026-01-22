@@ -108,12 +108,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         return;
       }
     }
-    if (_currentStep == 2) {
-      if (_projectPhotos.length < 3) {
-        _showSnack("Please upload at least 3 photos of your space");
-        return;
-      }
-    }
+    // Photo upload is now optional - no minimum requirement
     if (_currentStep == 3 && _selectedStyle.isEmpty) {
       _showSnack("Please select a primary design style");
       return;
@@ -272,17 +267,55 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
       // 1. Create Project & Upload Photos -> API
       final createdProject = await provider.addProject(project);
 
-      // 2. Trigger AI Generation -> API
-      await provider.generatePreview(createdProject.id);
+      // 2. Trigger AI Generation → API
+      final previewResponse = await provider.generatePreview(createdProject.id);
 
-      // Simulate AI time for better UX if API is too fast or just to show loader steps
+      // Extract data from backend response
+      String? aiPreviewUrl;
+      String? originalImageUrl;
+
+      if (previewResponse != null && previewResponse['data'] != null) {
+        final data = previewResponse['data'];
+        aiPreviewUrl = data['previewUrl'];
+        originalImageUrl = data['originalUrl'];
+
+        print("🎨 AI Preview URL: $aiPreviewUrl");
+        print("📸 Original Image URL: $originalImageUrl");
+      }
+
+      // Build full URLs for images
+      final String baseUrl = 'https://team1api.empyreal.in';
+      final List<String> backendPhotoPaths = originalImageUrl != null
+          ? [baseUrl + originalImageUrl]
+          : [];
+
+      // Use ORIGINAL project (which has all user inputs) and only update images
+      final displayProject = project.copyWith(
+        aiPreviewUrl: aiPreviewUrl,
+        photoPaths: backendPhotoPaths.isNotEmpty
+            ? backendPhotoPaths
+            : project.photoPaths,
+      );
+
+      print("✅ Final Display Project:");
+      print("   ID: ${createdProject.id}");
+      print("   Name: ${displayProject.name}");
+      print("   Photo Paths: ${displayProject.photoPaths}");
+      print("   AI Preview: ${displayProject.aiPreviewUrl}");
+      print("   Area: ${displayProject.propertyDetails.carpetArea}");
+      print(
+        "   Budget: ${displayProject.technicalRequirements.budget.totalBudget}",
+      );
+      print("   Style: ${displayProject.designPreferences.primaryStyle}");
+
+      // Simulate AI time for better UX
       await Future.delayed(2.seconds);
 
-      // 3. Success -> Navigate
+      // 3. Success → Navigate
       if (mounted) {
         setState(() => _isGenerating = false);
-        // Navigate to Preview Screen
-        context.push('/project-preview', extra: createdProject);
+        // Navigate with project that has USER'S INPUT DATA + BACKEND IMAGES
+        context.push('/project-preview', extra: displayProject);
       }
     } catch (e) {
       if (mounted) {
@@ -865,6 +898,14 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader("Show us your space"),
+          const SizedBox(height: 4),
+          Text(
+            "Upload photos of your space (optional)",
+            style: TextStyle(
+              color: isDark ? Colors.white60 : Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(16),

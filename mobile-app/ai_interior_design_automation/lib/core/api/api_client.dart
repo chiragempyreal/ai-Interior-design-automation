@@ -1,15 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../constants/api_constants.dart';
 
 class ApiClient {
   static final ApiClient _instance = ApiClient._internal();
   late final Dio dio;
 
-  factory ApiClient() {
-    return _instance;
-  }
+  factory ApiClient() => _instance;
 
   ApiClient._internal() {
     dio = Dio(
@@ -24,41 +23,34 @@ class ApiClient {
       ),
     );
 
-    // Add Auth Interceptor
+    // 🔐 Auth Interceptor
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Skip token for auth endpoints
-          if (!options.path.startsWith('/auth/login') &&
-              !options.path.startsWith('/auth/register') &&
-              !options.path.startsWith('/auth/forgot-password')) {
+          // Skip auth for login/register
+          if (!options.path.contains('/auth')) {
             final prefs = await SharedPreferences.getInstance();
             final token = prefs.getString('auth_token');
 
             if (token != null && token.isNotEmpty) {
-              debugPrint(
-                "ApiClient: Attaching Bearer Token (${token.length} chars)",
-              );
               options.headers['Authorization'] = 'Bearer $token';
-            } else {
-              debugPrint("ApiClient: No token found in SharedPreferences");
+              debugPrint("✅ Token Attached");
             }
           }
           return handler.next(options);
         },
         onError: (DioException e, handler) async {
           if (e.response?.statusCode == 401) {
-            // Handle token expiry -> Clear session
-            debugPrint("UNAUTHORIZED [401]: Clearing session...");
+            debugPrint("❌ 401 Unauthorized — Clearing session");
             final prefs = await SharedPreferences.getInstance();
-            await prefs.clear(); // Force logout on next app restart or check
+            await prefs.clear();
           }
           return handler.next(e);
         },
       ),
     );
 
-    // Log interceptor for debug
+    // 📦 Debug Logger
     if (kDebugMode) {
       dio.interceptors.add(
         LogInterceptor(requestBody: true, responseBody: true),
@@ -66,46 +58,30 @@ class ApiClient {
     }
   }
 
-  // GET Request
+  // ==============================
+  // HTTP METHODS
+  // ==============================
+
+  /// GET
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {
-    try {
-      return await dio.get(path, queryParameters: queryParameters);
-    } catch (e) {
-      rethrow;
-    }
+    return dio.get(path, queryParameters: queryParameters);
   }
 
-  // POST Request
-  Future<Response> post(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-  }) async {
-    try {
-      return await dio.post(path, data: data, queryParameters: queryParameters);
-    } catch (e) {
-      rethrow;
-    }
+  /// POST
+  Future<Response> post(String path, {dynamic data, Options? options}) async {
+    return dio.post(path, data: data, options: options);
   }
 
-  // PUT Request
+  /// PUT
   Future<Response> put(String path, {dynamic data}) async {
-    try {
-      return await dio.put(path, data: data);
-    } catch (e) {
-      rethrow;
-    }
+    return dio.put(path, data: data);
   }
 
-  // DELETE Request
+  /// DELETE
   Future<Response> delete(String path) async {
-    try {
-      return await dio.delete(path);
-    } catch (e) {
-      rethrow;
-    }
+    return dio.delete(path);
   }
 }
