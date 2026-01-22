@@ -219,7 +219,7 @@ class BrandShadows {
 
 /// Brand Constants
 class BrandConstants {
-  static const String brandName = "Elite Decora";
+  static const String brandName = "DESIGNQUOTE AI";
   static const String tagline = "Design with Confidence. Quote in Minutes.";
   static const double maxContentWidth = 1200.0;
   static const double cardElevation = 2.0;

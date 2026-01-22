@@ -1,5 +1,5 @@
 name: ai_interior_design_automation
-description: "Elite Decora"
+description: "DESIGNQUOTE AI"
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 version: 1.0.0+1
@@ -9,6 +9,8 @@ environment:
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
 
   # UI & Icons

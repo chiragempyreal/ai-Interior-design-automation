@@ -315,19 +315,70 @@ class StatsScreen extends StatelessWidget {
   }
 
   Widget _buildMonthlyChart(BuildContext context) {
+    final projectProvider = context.watch<ProjectProvider>();
+    final projects = projectProvider.projects;
+
+    // Calculate last 6 months data
+    final now = DateTime.now();
+    final monthData = <String, int>{};
+
+    for (int i = 5; i >= 0; i--) {
+      final month = DateTime(now.year, now.month - i, 1);
+      final monthKey = '${month.month}-${month.year}';
+      monthData[monthKey] = 0;
+    }
+
+    // Count projects per month
+    for (var project in projects) {
+      final createdDate = project.createdAt;
+      final monthKey = '${createdDate.month}-${createdDate.year}';
+      if (monthData.containsKey(monthKey)) {
+        monthData[monthKey] = (monthData[monthKey] ?? 0) + 1;
+      }
+    }
+
+    // Find max for scaling
+    final maxCount = monthData.values.isEmpty
+        ? 1
+        : monthData.values.reduce((a, b) => a > b ? a : b);
+    final scaledMax = maxCount == 0 ? 1.0 : maxCount.toDouble();
+
+    // Build bars
+    final bars = <Widget>[];
+    int index = 0;
+    monthData.forEach((key, count) {
+      final month = DateTime(
+        int.parse(key.split('-')[1]),
+        int.parse(key.split('-')[0]),
+        1,
+      );
+      final monthLabel = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ][month.month - 1];
+      final isActive = index == monthData.length - 1;
+      bars.add(
+        _buildBar(context, monthLabel, count / scaledMax, isActive: isActive),
+      );
+      index++;
+    });
+
     return SizedBox(
       height: 150,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildBar(context, "Jan", 0.4),
-          _buildBar(context, "Feb", 0.6),
-          _buildBar(context, "Mar", 0.3),
-          _buildBar(context, "Apr", 0.8),
-          _buildBar(context, "May", 0.5),
-          _buildBar(context, "Jun", 0.9, isActive: true),
-        ],
+        children: bars,
       ),
     );
   }

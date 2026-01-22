@@ -40,7 +40,7 @@ class NotificationService {
     const AndroidNotificationDetails androidDetails =
         AndroidNotificationDetails(
           'elite_decora_channel',
-          'Elite Decora Notifications',
+          'DESIGNQUOTE AI Notifications',
           channelDescription: 'Main channel for app notifications',
           importance: Importance.max,
           priority: Priority.high,

@@ -113,12 +113,8 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   }
 
   void _continue() {
-    if (widget.project != null) {
-      context.push('/generate-scope', extra: widget.project);
-    } else {
-      // Navigate to create project flow
-      context.push('/create-project');
-    }
+    // Navigate to create project flow
+    context.push('/create-project');
   }
 
   @override
@@ -212,21 +208,21 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
             ElevatedButton(
               onPressed: _selectedImage != null ? _continue : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: theme.primaryColor,
-                foregroundColor:
-                    theme.colorScheme.onPrimary, // Adaptive text color
+                backgroundColor: BrandColors.accent,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(BrandRadius.xxl),
                 ),
                 elevation: 4,
-                shadowColor: theme.primaryColor.withOpacity(0.4),
+                shadowColor: BrandColors.accent.withOpacity(0.4),
                 disabledBackgroundColor: theme.disabledColor,
               ),
               child: Text(
-                "Generate Project Scope",
+                "Continue to Project",
                 style: BrandTypography.h5.copyWith(
-                  color: theme.colorScheme.onPrimary,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
@@ -355,19 +351,29 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(BrandRadius.xxl),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 24),
         decoration: BoxDecoration(
-          color: theme.cardTheme.color,
+          color: isDark ? const Color(0xFF1E1E1E) : theme.cardTheme.color,
           borderRadius: BorderRadius.circular(BrandRadius.xxl),
-          boxShadow: BrandShadows.light,
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.1) : Colors.transparent,
+          ),
+          boxShadow: isDark ? [] : BrandShadows.light,
         ),
         child: Column(
           children: [
-            Icon(icon, color: theme.primaryColor, size: 32),
+            Icon(
+              icon,
+              color: label == "Gallery"
+                  ? BrandColors.accent
+                  : theme.primaryColor,
+              size: 32,
+            ),
             const SizedBox(height: 12),
             Text(
               label,

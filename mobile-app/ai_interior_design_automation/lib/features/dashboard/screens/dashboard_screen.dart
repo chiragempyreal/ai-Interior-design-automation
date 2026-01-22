@@ -249,7 +249,7 @@ class _HomeTabState extends State<_HomeTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "ELITE DECORA",
+                    "DESIGNQUOTE AI",
                     style: TextStyle(
                       fontFamily: BrandTypography.primaryFont,
                       fontSize: 18,
@@ -277,7 +277,6 @@ class _HomeTabState extends State<_HomeTab> {
               "https://i.pravatar.cc/150?u=elite",
             ),
             backgroundColor: BrandColors.accent.withOpacity(0.2),
-            child: const Icon(Icons.person_outline, color: BrandColors.primary),
           ),
         ],
       ),

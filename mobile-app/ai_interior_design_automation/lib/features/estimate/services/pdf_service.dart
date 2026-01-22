@@ -98,7 +98,7 @@ class PdfService {
           ),
           pw.SizedBox(height: 4),
           pw.Text(
-            'Elite Decora',
+            'DESIGNQUOTE AI',
             style: const pw.TextStyle(color: PdfColors.white, fontSize: 12),
           ),
         ],

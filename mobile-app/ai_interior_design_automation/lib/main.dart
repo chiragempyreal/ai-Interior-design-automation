@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -52,6 +53,16 @@ class DesignQuoteApp extends StatelessWidget {
       darkTheme: BrandTheme.darkTheme,
       themeMode: prefs.themeMode,
       locale: prefs.locale,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en', 'US'),
+        Locale('hi', 'IN'),
+        Locale('gu', 'IN'),
+      ],
       debugShowCheckedModeBanner: false,
       routerConfig: appRouter,
     );
