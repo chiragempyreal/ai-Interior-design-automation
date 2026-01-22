@@ -1,8 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 
 const Home: React.FC = () => {
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const comparisonRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -21,6 +25,32 @@ const Home: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging || !comparisonRef.current) return;
+
+      const rect = comparisonRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+      setSliderPosition(percentage);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+
   return (
     <div className="bg-background-light font-display text-charcoal overflow-x-hidden min-h-screen">
       <Header />
@@ -31,7 +61,7 @@ const Home: React.FC = () => {
           <div className="absolute top-1/4 -right-20 w-96 h-96 border border-accent-warm/10 rounded-full animate-float -z-10"></div>
           <div className="absolute bottom-1/4 -left-20 w-64 h-64 bg-primary/5 rounded-full animate-float-reverse -z-10"></div>
           <div className="absolute inset-0 opacity-[0.05] pointer-events-none animate-parallax-dots" style={{ backgroundImage: 'radial-gradient(#2b3e3a 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
-          
+
           <div className="max-w-7xl mx-auto w-full grid lg:grid-cols-12 gap-12 items-center relative z-10">
             <div className="lg:col-span-5 space-y-6">
               <div className="space-y-3">
@@ -56,18 +86,39 @@ const Home: React.FC = () => {
                 </button> */}
               </div>
             </div>
-            
-            <div className="lg:col-span-7 relative group">
-              <div className="animate-breathe aspect-[16/10] md:aspect-[4/3] rounded-[1.5rem] overflow-hidden shadow-2xl relative border-[8px] border-white/30 transition-transform duration-700">
+
+            <div className="lg:col-span-7 relative">
+              <div
+                ref={comparisonRef}
+                className="animate-breathe aspect-[16/10] md:aspect-[4/3] rounded-[1.5rem] overflow-hidden shadow-2xl relative border-[8px] border-white/30 transition-transform duration-700"
+              >
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDg5rQnK30-iqx1dJDPAo2_46Dp3NCCqBajuFNHm-GfHjBVMR5HhKnn1xlp59i98qXeMFHgvN3-SuWg4F7_QFEgh4pql2gimoN-GptYG1k4RLO25DIe1oo0ETUjh7MYE9EafjB9vpYaNkoFDDRZGjDrby2Ox0lFqgvXD-ZKd-sDRNo5HTDe96Lay0lkPdTmtAqqj5W1KdjjH0DHYNubkiefQhH6oDOspEUOEnbFEwjCvMMakv4KCv4YUu8v5614dwYsIdCp36OmDjM')" }}></div>
-                <div className="absolute inset-0 w-1/2 overflow-hidden border-r-2 border-white/80 z-10 hover:w-[60%] transition-all duration-1000 ease-in-out">
-                  <div className="absolute inset-0 w-[200%] h-full bg-cover bg-center grayscale contrast-125 brightness-75" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB-WR-3ndRWx8K93h-UF7yGK98mybxoVvKx_28VBGoIiawVL32ztLKWp6EzG2qbHQbChp-hfFpPt2iCeP7NfJNl46IvST3yLvWEbVSRLYosLl4K-8QdWCvFgtsb5hBM3SndcUW_swarE1zcF2o0ZJmJl1NrD4spClSW8vglD7V999uQ2Slt4ngjB2t1Stp7l-5tbF5HRsGkyG8Z8Bst8xjyf3b83GLbZT9ra2bP1ZVRLI2oD5fhM1LTBLt05fINcFRN1CGPkS73oSw')" }}></div>
-                  <div className="absolute top-6 left-6 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full">
-                    <span className="text-white font-geist text-[9px] font-bold uppercase tracking-widest">Original Structure</span>
-                  </div>
+                <div
+                  className="absolute inset-0 overflow-hidden border-r-2 border-white/80 z-10 transition-all duration-300 ease-out"
+                  style={{ width: `${sliderPosition}%` }}
+                >
+                  <div
+                    className="absolute top-0 left-0 h-full bg-cover bg-center grayscale contrast-125 brightness-75"
+                    style={{
+                      backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuB-WR-3ndRWx8K93h-UF7yGK98mybxoVvKx_28VBGoIiawVL32ztLKWp6EzG2qbHQbChp-hfFpPt2iCeP7NfJNl46IvST3yLvWEbVSRLYosLl4K-8QdWCvFgtsb5hBM3SndcUW_swarE1zcF2o0ZJmJl1NrD4spClSW8vglD7V999uQ2Slt4ngjB2t1Stp7l-5tbF5HRsGkyG8Z8Bst8xjyf3b83GLbZT9ra2bP1ZVRLI2oD5fhM1LTBLt05fINcFRN1CGPkS73oSw')",
+                      width: comparisonRef.current ? `${comparisonRef.current.offsetWidth}px` : '100%'
+                    }}
+                  ></div>
                 </div>
-                <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-white/50 z-20 group-hover:left-[60%] transition-all duration-1000 ease-in-out">
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center cursor-ew-resize hover:scale-110 transition-transform duration-300">
+                <div className="absolute top-6 left-6 z-30 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center">
+                  <span className="text-white font-geist text-[9px] font-bold uppercase tracking-widest">Original Structure</span>
+                </div>
+                <div
+                  className="absolute top-0 bottom-0 w-[2px] bg-white/50 z-20 transition-all duration-300 ease-out"
+                  style={{ left: `${sliderPosition}%` }}
+                >
+                  <div
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-12 h-12 bg-white rounded-full shadow-2xl flex items-center justify-center cursor-ew-resize hover:scale-110 transition-transform duration-300"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      setIsDragging(true);
+                    }}
+                  >
                     <div className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-charcoal text-lg">chevron_left</span>
                       <span className="material-symbols-outlined text-charcoal text-lg">chevron_right</span>
@@ -78,7 +129,10 @@ const Home: React.FC = () => {
                   <span className="w-1.5 h-1.5 rounded-full bg-accent-warm animate-pulse"></span>
                   <span className="text-white font-geist text-[9px] font-bold uppercase tracking-widest">AI Visualization</span>
                 </div>
-                <div className="absolute bottom-6 left-1/2 translate-x-4 z-20 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-charcoal/5 group-hover:translate-x-8 transition-all duration-1000">
+                <div
+                  className="absolute bottom-6 z-20 bg-white/90 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-charcoal/5 transition-all duration-300"
+                  style={{ left: `${sliderPosition}%`, transform: 'translateX(1rem)' }}
+                >
                   <p className="text-[9px] font-bold text-charcoal/40 uppercase tracking-tighter mb-0.5">Estimated Budget</p>
                   <p className="text-base font-black text-charcoal">₹12,40,000</p>
                 </div>
@@ -177,31 +231,31 @@ const Home: React.FC = () => {
         {/* CTA Section */}
         <section className="px-6 md:px-12 py-16">
           <div className="bg-primary rounded-[3rem] p-12 md:p-24 text-center relative overflow-hidden reveal-on-scroll">
-             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
-             <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to redesign your space?</h2>
-             <p className="text-white/70 max-w-2xl mx-auto mb-10 text-lg font-light">Join thousands of homeowners who have transformed their interiors with InteriAI's intelligent automation.</p>
-             <Link to="/wizard" className="pill-button bg-white text-primary font-geist text-[11px] font-bold tracking-widest uppercase py-4 px-10 rounded-full shadow-xl hover:bg-cream-base inline-flex">
-                Start Your Project
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
-             </Link>
+            <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to redesign your space?</h2>
+            <p className="text-white/70 max-w-2xl mx-auto mb-10 text-lg font-light">Join thousands of homeowners who have transformed their interiors with InteriAI's intelligent automation.</p>
+            <Link to="/wizard" className="pill-button bg-white text-primary font-geist text-[11px] font-bold tracking-widest uppercase py-4 px-10 rounded-full shadow-xl hover:bg-cream-base inline-flex">
+              Start Your Project
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </Link>
           </div>
         </section>
 
         <footer className="py-12 border-t border-charcoal/5">
-            <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-6">
-                <div className="flex items-center gap-2">
-                    <div className="relative w-4 h-4">
-                        <div className="absolute inset-0 border-[1px] border-primary rounded-full"></div>
-                        <div className="absolute inset-0 border-[1px] border-accent-warm rounded-full translate-x-1"></div>
-                    </div>
-                    <span className="font-geist text-[10px] font-bold tracking-[0.2em] uppercase text-charcoal">InteriAI © 2024</span>
-                </div>
-                <div className="flex gap-8">
-                    <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-charcoal/50 hover:text-primary transition-colors">Privacy</a>
-                    <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-charcoal/50 hover:text-primary transition-colors">Terms</a>
-                    <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-charcoal/50 hover:text-primary transition-colors">Contact</a>
-                </div>
+          <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="relative w-4 h-4">
+                <div className="absolute inset-0 border-[1px] border-primary rounded-full"></div>
+                <div className="absolute inset-0 border-[1px] border-accent-warm rounded-full translate-x-1"></div>
+              </div>
+              <span className="font-geist text-[10px] font-bold tracking-[0.2em] uppercase text-charcoal">InteriAI © 2024</span>
             </div>
+            <div className="flex gap-8">
+              <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-charcoal/50 hover:text-primary transition-colors">Privacy</a>
+              <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-charcoal/50 hover:text-primary transition-colors">Terms</a>
+              <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-charcoal/50 hover:text-primary transition-colors">Contact</a>
+            </div>
+          </div>
         </footer>
       </main>
     </div>
