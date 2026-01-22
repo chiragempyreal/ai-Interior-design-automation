@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import Header from '../components/Header';
 import { Link } from 'react-router-dom';
 
 const HowItWorks: React.FC = () => {
@@ -24,29 +25,7 @@ const HowItWorks: React.FC = () => {
 
   return (
     <div className="bg-background font-display text-charcoal overflow-x-hidden">
-      <header className="fixed top-0 w-full z-50 glass-nav border-b border-charcoal/5 px-6 md:px-12 py-5 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group cursor-pointer flex-1">
-          <div className="relative w-7 h-7">
-            <div className="absolute inset-0 border-[1.5px] border-primary rounded-full"></div>
-            <div className="absolute inset-0 border-[1.5px] border-accent-warm rounded-full translate-x-2"></div>
-          </div>
-          <h1 className="font-geist text-[11px] font-bold tracking-[0.25em] uppercase ml-3">DesignQuote AI</h1>
-        </Link>
-        <nav className="hidden md:flex gap-12 items-center justify-center flex-1">
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/how-it-works" className="nav-link text-primary">How It Works</Link>
-          <Link to="/pricing" className="nav-link">Pricing</Link>
-          <Link to="/examples" className="nav-link">Examples</Link>
-        </nav>
-        <div className="flex items-center gap-8 justify-end flex-1">
-          <div className="hidden md:flex items-center gap-8">
-            <Link to="/login" className="nav-link">Login</Link>
-          </div>
-          <button className="bg-primary text-white font-geist text-[10px] font-bold tracking-[0.2em] uppercase px-7 py-3 rounded-full hover:bg-charcoal transition-all shadow-sm">
-            Sign Up
-          </button>
-        </div>
-      </header>
+      <Header />
 
       <main>
         <section className="relative pt-24 pb-20 flex flex-col items-center text-center px-6 overflow-hidden">

@@ -24,13 +24,17 @@ export const createProject = async (req: Request, res: Response, next: NextFunct
       return sendError(res, 'Please provide title, name and email', null, 400);
     }
 
+    const userId = (req as any).user?._id;
+
     const project = await Project.create({
       title,
       clientName,
       clientEmail,
       clientPhone,
       projectType,
-      status: 'draft'
+      status: 'draft',
+      user_id: userId,
+      createdBy: userId
     });
 
     return sendSuccess(res, 'Project created successfully', project, 201);

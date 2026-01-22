@@ -1,60 +1,68 @@
 import React from 'react';
-import { LayoutDashboard, Settings, Users, FileText } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import clsx from 'clsx';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  FolderKanban, 
+  Users, 
+  Settings, 
+  LogOut,
+  Hexagon
+} from 'lucide-react';
 
 const Sidebar: React.FC = () => {
-  const location = useLocation();
-  
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
   const navItems = [
-    { name: 'Dashboard', icon: LayoutDashboard, path: '/' },
-    { name: 'Projects', icon: FileText, path: '/projects' },
-    { name: 'Users', icon: Users, path: '/users' },
-    { name: 'Settings', icon: Settings, path: '/settings' },
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+    { icon: FolderKanban, label: 'Projects', path: '/projects' },
+    { icon: Users, label: 'Users', path: '/users' },
+    { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
   return (
-    <div className="bg-surface w-72 shadow-xl hidden md:flex flex-col border-r border-border h-screen sticky top-0 z-50">
+    <div className="w-64 bg-surface border-r border-border h-screen sticky top-0 flex flex-col transition-all duration-300">
       <div className="h-24 flex items-center px-8 border-b border-border">
-        <h1 className="text-3xl font-serif font-bold text-primary tracking-tight">InteriAI</h1>
-      </div>
-      <nav className="flex-1 overflow-y-auto p-6 space-y-2">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={clsx(
-                'flex items-center px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden',
-                isActive
-                  ? 'bg-primary text-white shadow-md shadow-primary/25'
-                  : 'text-text-secondary hover:bg-background hover:text-primary'
-              )}
-            >
-              <item.icon 
-                className={clsx(
-                  "mr-3.5 h-5 w-5 transition-colors", 
-                  isActive ? "text-white" : "text-text-secondary group-hover:text-primary"
-                )} 
-              />
-              <span className="relative z-10">{item.name}</span>
-              {!isActive && (
-                <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-      
-      <div className="p-6 border-t border-border">
-        <div className="bg-background rounded-xl p-4 border border-border">
-          <p className="text-xs font-medium text-text-secondary uppercase tracking-wider mb-2">System Status</p>
-          <div className="flex items-center space-x-2">
-            <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-            <span className="text-sm font-medium text-text">Operational</span>
+        <div className="flex items-center gap-3">
+          <div className="bg-primary/10 p-2 rounded-xl">
+            <Hexagon className="w-6 h-6 text-primary fill-current" />
           </div>
+          <span className="text-xl font-bold font-display text-text tracking-tight">InteriAI</span>
         </div>
+      </div>
+
+      <nav className="flex-1 px-4 py-8 space-y-2">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                isActive 
+                  ? 'bg-primary text-white shadow-lg shadow-primary/25 font-medium' 
+                  : 'text-text-secondary hover:bg-background-light hover:text-primary'
+              }`
+            }
+          >
+            <item.icon className="w-5 h-5 transition-transform group-hover:scale-110 duration-200" />
+            <span className="text-sm tracking-wide">{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="p-4 border-t border-border">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-secondary hover:bg-error/10 hover:text-error transition-all duration-200 group"
+        >
+          <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1 duration-200" />
+          <span className="text-sm font-medium">Log Out</span>
+        </button>
       </div>
     </div>
   );

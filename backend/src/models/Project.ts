@@ -65,6 +65,7 @@ export interface IProject extends Document {
   
   status: 'draft' | 'submitted' | 'under_review' | 'quoted' | 'approved' | 'completed';
   
+  user_id?: mongoose.Schema.Types.ObjectId;
   createdBy?: mongoose.Schema.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -141,6 +142,7 @@ const ProjectSchema: Schema = new Schema(
       default: 'draft',
       index: true,
     },
+    user_id: { type: Schema.Types.ObjectId, ref: 'User' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }

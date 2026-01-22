@@ -1,14 +1,25 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, DollarSign, Briefcase, Clock, AlertCircle } from 'lucide-react';
+import { TrendingUp, DollarSign, Briefcase, Clock, Users, CheckCircle } from 'lucide-react';
 import api from '@/services/api';
 import { format } from 'date-fns';
 
 interface DashboardStats {
-  activeProjects: number;
-  pendingQuotes: number;
-  revenue: number;
+  users: {
+    total: number;
+    growth: string;
+  };
+  projects: {
+    total: number;
+    active: number;
+    pending: number;
+    completed: number;
+  };
+  revenue: {
+    total: number;
+    trend: string;
+  };
 }
 
 interface Project {
@@ -50,9 +61,9 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ElementType
 
 const Dashboard: React.FC = () => {
   const { data: statsData, isLoading: statsLoading } = useQuery<DashboardStats>({
-    queryKey: ['dashboardStats'],
+    queryKey: ['adminStats'],
     queryFn: async () => {
-      const res = await api.get('/projects/stats');
+      const res = await api.get('/admin/stats');
       return res.data.data;
     }
   });
@@ -74,7 +85,11 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  const stats = statsData || { activeProjects: 0, pendingQuotes: 0, revenue: 0 };
+  const stats = statsData || { 
+    users: { total: 0, growth: '0%' }, 
+    projects: { total: 0, active: 0, pending: 0, completed: 0 }, 
+    revenue: { total: 0, trend: '0%' } 
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
@@ -86,132 +101,120 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Total Revenue" 
-          value={`$${(stats.revenue || 0).toLocaleString()}`} 
+          value={`$${(stats.revenue.total || 0).toLocaleString()}`} 
           icon={DollarSign} 
           color="text-success" 
           bgColor="bg-success/10"
-          trend="+12.5%"
+          trend={stats.revenue.trend}
         />
         <StatCard 
           title="Active Projects" 
-          value={stats.activeProjects?.toString() || '0'} 
+          value={stats.projects.active?.toString() || '0'} 
           icon={Briefcase} 
           color="text-primary" 
           bgColor="bg-primary/10"
         />
         <StatCard 
+          title="Total Users" 
+          value={stats.users.total?.toString() || '0'} 
+          icon={Users} 
+          color="text-accent" 
+          bgColor="bg-accent/10"
+          trend={stats.users.growth}
+        />
+        <StatCard 
           title="Pending Quotes" 
-          value={stats.pendingQuotes?.toString() || '0'} 
+          value={stats.projects.pending?.toString() || '0'} 
           icon={Clock} 
           color="text-warning" 
           bgColor="bg-warning/10"
         />
-        <StatCard 
-          title="Growth Rate" 
-          value="24.8%" 
-          icon={TrendingUp} 
-          color="text-secondary" 
-          bgColor="bg-secondary/10"
-          trend="+4.2%"
-        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-surface shadow-sm border border-border/60 rounded-2xl p-6 lg:col-span-2">
+        <div className="lg:col-span-2 bg-surface rounded-2xl shadow-sm border border-border/60 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-text font-serif">Recent Requests</h3>
-            <button className="text-sm font-medium text-primary hover:text-primary-dark transition-colors">View All</button>
+            <h3 className="text-lg font-bold text-text font-serif">Recent Projects</h3>
+            <button className="text-sm text-primary font-medium hover:text-primary-dark transition-colors">View All</button>
           </div>
           
-          <div className="flow-root">
-            {!pendingProjects || pendingProjects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="h-16 w-16 bg-background rounded-full flex items-center justify-center mb-4">
-                  <Briefcase className="h-8 w-8 text-text-secondary/50" />
+          <div className="space-y-4">
+            {pendingProjects?.slice(0, 5).map((project) => (
+              <div key={project._id} className="flex items-center justify-between p-4 rounded-xl hover:bg-background-light transition-colors group border border-transparent hover:border-border/40">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {project.title.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-text group-hover:text-primary transition-colors">{project.title}</h4>
+                    <p className="text-xs text-text-secondary">{project.clientName} • {format(new Date(project.createdAt), 'MMM d, yyyy')}</p>
+                  </div>
                 </div>
-                <p className="text-text font-medium">No pending requests</p>
-                <p className="text-sm text-text-secondary mt-1">New project requests will appear here.</p>
+                <div className="flex items-center gap-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    project.status === 'under_review' ? 'bg-warning/10 text-warning' : 
+                    project.status === 'quoted' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
+                  }`}>
+                    {project.status.replace('_', ' ')}
+                  </span>
+                  <button className="text-text-secondary hover:text-primary transition-colors">
+                    <TrendingUp className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-            ) : (
-              <ul className="-my-2 divide-y divide-border/50">
-                {pendingProjects.map((project) => (
-                  <li key={project._id} className="py-4 hover:bg-background/50 transition-colors rounded-xl px-4 -mx-4 group cursor-pointer">
-                    <div className="flex items-center gap-4">
-                      <div className="flex-shrink-0">
-                        {project.aiPreviewUrl ? (
-                          <img className="h-12 w-12 rounded-lg object-cover border border-border shadow-sm group-hover:shadow transition-shadow" src={project.aiPreviewUrl} alt="" />
-                        ) : (
-                          <div className="h-12 w-12 rounded-lg bg-background border border-border flex items-center justify-center group-hover:border-primary/30 transition-colors">
-                            <AlertCircle className="h-5 w-5 text-text-secondary" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-text truncate group-hover:text-primary transition-colors">
-                            {project.title}
-                          </p>
-                          <span className="text-xs text-text-secondary">
-                            {format(new Date(project.createdAt), 'MMM d')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-xs text-text-secondary truncate max-w-[200px]">
-                            {project.clientName}
-                          </p>
-                          <span className="h-1 w-1 rounded-full bg-border"></span>
-                          <p className="text-xs text-text-secondary font-medium">
-                            {project.stylePreferences?.style || 'No Style'}
-                          </p>
-                        </div>
-                      </div>
-                      <div>
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border
-                          ${project.status === 'submitted' 
-                            ? 'bg-warning/5 text-warning border-warning/20' 
-                            : 'bg-primary/5 text-primary border-primary/20'}`}>
-                          {project.status.replace('_', ' ').toUpperCase()}
-                        </span>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+            ))}
+            
+            {(!pendingProjects || pendingProjects.length === 0) && (
+               <div className="text-center py-10">
+                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-background-light mb-3">
+                   <CheckCircle className="h-6 w-6 text-text-secondary/50" />
+                 </div>
+                 <p className="text-text-secondary">No pending projects found.</p>
+               </div>
             )}
           </div>
         </div>
-
-        <div className="bg-gradient-to-br from-primary to-primary-dark rounded-2xl p-6 text-white shadow-lg shadow-primary/20 relative overflow-hidden">
-          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
-          <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-24 h-24 bg-black/10 rounded-full blur-xl"></div>
+        
+        <div className="bg-surface rounded-2xl shadow-sm border border-border/60 p-6">
+          <h3 className="text-lg font-bold text-text font-serif mb-6">Quick Actions</h3>
+          <div className="space-y-3">
+            <button className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary">
+              <span className="font-medium text-sm">Create New Quote</span>
+              <DollarSign className="h-4 w-4" />
+            </button>
+            <button className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary">
+              <span className="font-medium text-sm">Review Pending Requests</span>
+              <Clock className="h-4 w-4" />
+            </button>
+            <button className="w-full flex items-center justify-between p-3 rounded-xl bg-background-light hover:bg-primary/5 hover:text-primary transition-colors text-text-secondary">
+              <span className="font-medium text-sm">Manage Users</span>
+              <Users className="h-4 w-4" />
+            </button>
+          </div>
           
-          <h3 className="text-lg font-bold font-serif mb-2 relative z-10">Pro Tips</h3>
-          <p className="text-primary-light/90 text-sm mb-6 relative z-10 leading-relaxed">
-            Reviewing pending quotes within 24 hours increases conversion rates by 40%.
-          </p>
-          
-          <div className="space-y-4 relative z-10">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-lg">
-                  <TrendingUp className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-white/70">Trending Style</p>
-                  <p className="text-sm font-semibold">Minimalist Zen</p>
-                </div>
+          <div className="mt-8 pt-6 border-t border-border/40">
+            <h4 className="text-sm font-bold text-text mb-4">System Status</h4>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-secondary">Server Status</span>
+                <span className="flex items-center gap-1.5 text-success font-medium">
+                  <span className="w-2 h-2 rounded-full bg-success"></span>
+                  Online
+                </span>
               </div>
-            </div>
-            
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:bg-white/20 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/10 rounded-lg">
-                  <Briefcase className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-white/70">Most Active Region</p>
-                  <p className="text-sm font-semibold">North America</p>
-                </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-secondary">AI Engine</span>
+                <span className="flex items-center gap-1.5 text-success font-medium">
+                  <span className="w-2 h-2 rounded-full bg-success"></span>
+                  Operational
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-text-secondary">Database</span>
+                <span className="flex items-center gap-1.5 text-success font-medium">
+                  <span className="w-2 h-2 rounded-full bg-success"></span>
+                  Connected
+                </span>
               </div>
             </div>
           </div>

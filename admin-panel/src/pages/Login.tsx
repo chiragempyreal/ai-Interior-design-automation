@@ -15,7 +15,7 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post('/admin/login', { email, password });
       const { token, user } = res.data.data;
       
       localStorage.setItem('token', token);

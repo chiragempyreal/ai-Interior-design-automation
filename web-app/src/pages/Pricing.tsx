@@ -1,9 +1,11 @@
 import { CheckCircle, Circle, Minus, Plus } from 'lucide-react';
+import Header from '../components/Header';
 
 const Pricing = () => {
   return (
     <div className="bg-[#F8F6F1] font-sans text-[#131614] min-h-screen">
       {/* Header */}
+      <Header />
       <header className="relative pt-32 pb-24 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(74, 109, 90, 0.05) 0%, transparent 70%)' }}></div>
         <div className="relative max-w-4xl mx-auto px-6 sm:px-12 text-center">

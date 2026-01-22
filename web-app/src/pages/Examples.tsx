@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Header from '../components/Header';
 
 const Examples: React.FC = () => {
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -29,29 +30,7 @@ const Examples: React.FC = () => {
   return (
     <div className="bg-background-light font-display text-charcoal overflow-x-hidden min-h-screen">
       {/* Navigation */}
-      <nav className="sticky top-0 w-full z-50 glass-nav border-b border-charcoal/5">
-        <div className="max-w-[1920px] mx-auto px-6 md:px-12 h-20 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 group cursor-pointer">
-            <div className="relative w-7 h-7 flex items-center justify-center">
-              <div className="absolute inset-0 border-[1.5px] border-primary rounded-full"></div>
-              <div className="absolute inset-0 border-[1.5px] border-accent-warm rounded-full translate-x-2"></div>
-            </div>
-            <h1 className="font-geist text-[11px] font-bold tracking-[0.25em] uppercase ml-3 text-charcoal">DesignQuote AI</h1>
-          </Link>
-          <div className="hidden md:flex items-center gap-12">
-            <Link to="/" className="font-geist text-[10px] font-black uppercase tracking-[0.25em] text-charcoal/40 hover:text-primary transition-colors">HOME</Link>
-            <Link to="/how-it-works" className="font-geist text-[10px] font-black uppercase tracking-[0.25em] text-charcoal/40 hover:text-primary transition-colors">HOW IT WORKS</Link>
-            <Link to="/pricing" className="font-geist text-[10px] font-black uppercase tracking-[0.25em] text-charcoal/40 hover:text-primary transition-colors">PRICING</Link>
-            <Link to="/examples" className="font-geist text-[10px] font-black uppercase tracking-[0.25em] text-primary transition-colors">EXAMPLES</Link>
-          </div>
-          <div className="flex items-center gap-8">
-            <Link to="/login" className="font-geist text-[11px] font-black uppercase tracking-[0.2em] text-charcoal hover:text-primary transition-colors">LOGIN</Link>
-            <button className="bg-primary text-white font-geist text-[10px] font-bold tracking-[0.2em] uppercase px-8 py-3 rounded-full hover:bg-charcoal transition-all shadow-md shadow-primary/10 hover:translate-y-[-2px]">
-              Start Project
-            </button>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <main className="max-w-[1920px] mx-auto px-6 lg:px-20 pt-20">
         {/* Hero Section */}

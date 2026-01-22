@@ -1,6 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Dashboard from '@/pages/Dashboard';
+import Projects from '@/pages/Projects';
+import Users from '@/pages/Users';
+import Settings from '@/pages/Settings';
 import Login from '@/pages/Login';
 import MainLayout from '@/layouts/MainLayout';
 
@@ -22,9 +25,11 @@ function App() {
           <Route path="/login" element={<Login />} />
           
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<MainLayout />}>
-              <Route index element={<Dashboard />} />
-              {/* Add more routes here */}
+            <Route element={<MainLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/projects" element={<Projects />} />
+              <Route path="/users" element={<Users />} />
+              <Route path="/settings" element={<Settings />} />
             </Route>
           </Route>
         </Routes>
