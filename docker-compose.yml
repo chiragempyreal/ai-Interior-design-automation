@@ -4,7 +4,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "5000:5000"
+      - "5001:5001"
     environment:
       - MONGO_URI=mongodb://mongo:27017/interior-design-db
       - REDIS_URL=redis://redis:6379

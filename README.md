@@ -22,7 +22,7 @@ docker-compose up --build
 ```
 
 This will start:
-- Backend API at `http://localhost:5000`
+- Backend API at `http://localhost:5001`
 - Admin Panel at `http://localhost:3000`
 - Web App at `http://localhost:80` (mapped to port 80)
 - MongoDB at `mongodb://localhost:27017`

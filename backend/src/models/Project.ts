@@ -4,9 +4,69 @@ export interface IProject extends Document {
   title: string;
   clientName: string;
   clientEmail: string;
-  requirements: Record<string, any>;
-  status: 'draft' | 'pending_approval' | 'approved' | 'rejected' | 'completed';
-  createdBy: mongoose.Schema.Types.ObjectId;
+  clientPhone?: string;
+  
+  // Project Details
+  projectType: 'Residential' | 'Commercial';
+  propertyType?: string; // Apartment, Villa, Office
+  spaceType?: string; // Living Room, Kitchen, Full Home
+  area?: number; // sqft
+  location?: {
+    city: string;
+    pincode?: string;
+    address?: string;
+  };
+
+  // Preferences
+  budget?: {
+    min: number;
+    max: number;
+  };
+  timeline?: string; // Flexible, 1-2 months, etc.
+  
+  // Design Specs
+  stylePreferences?: {
+    style?: string; // Modern, Minimal, etc.
+    colors?: string[];
+  };
+
+  materials?: {
+    flooring?: string;
+    walls?: string;
+    furniture?: string;
+    lighting?: string;
+  };
+
+  // Media
+  photos?: string[]; // URLs
+  aiPreviewUrl?: string; // Generated AI image URL
+  aiDesignAnalysis?: {
+    rationale?: string;
+    styleNotes?: string;
+    colorPaletteExplanation?: string;
+    estimatedCostRange?: string;
+  };
+
+  roiAnalysis?: {
+    estimatedIncreaseInValue?: number;
+    roiPercentage?: number;
+    investmentScore?: number;
+    marketTrendAlignment?: string;
+  };
+
+  designDNA?: {
+    personaName?: string;
+    personalityTraits?: string[];
+    colorPsychology?: string;
+    recommendedScent?: string;
+    playlistVibe?: string;
+    colorPalette?: Array<{ name: string; hex: string; mood: string }>;
+  };
+  
+  status: 'draft' | 'submitted' | 'under_review' | 'quoted' | 'approved' | 'completed';
+  
+  user_id?: mongoose.Schema.Types.ObjectId;
+  createdBy?: mongoose.Schema.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -16,13 +76,73 @@ const ProjectSchema: Schema = new Schema(
     title: { type: String, required: true, trim: true },
     clientName: { type: String, required: true, trim: true },
     clientEmail: { type: String, required: true, trim: true, lowercase: true },
-    requirements: { type: Map, of: Schema.Types.Mixed, default: {} },
+    clientPhone: { type: String, trim: true },
+
+    projectType: { 
+      type: String, 
+      enum: ['Residential', 'Commercial'], 
+      default: 'Residential' 
+    },
+    propertyType: { type: String },
+    spaceType: { type: String },
+    area: { type: Number },
+    location: {
+      city: String,
+      pincode: String,
+      address: String
+    },
+
+    budget: {
+      min: Number,
+      max: Number
+    },
+    timeline: { type: String },
+
+    stylePreferences: {
+      style: String,
+      colors: [String]
+    },
+
+    materials: {
+      flooring: String,
+      walls: String,
+      furniture: String,
+      lighting: String
+    },
+
+    // Media
+    photos: [String],
+    aiPreviewUrl: String,
+    aiDesignAnalysis: {
+      rationale: String,
+      styleNotes: String,
+      colorPaletteExplanation: String,
+      estimatedCostRange: String
+    },
+
+    roiAnalysis: {
+      estimatedIncreaseInValue: Number,
+      roiPercentage: Number,
+      investmentScore: Number,
+      marketTrendAlignment: String
+    },
+
+    designDNA: {
+      personaName: String,
+      personalityTraits: [String],
+      colorPsychology: String,
+      recommendedScent: String,
+      playlistVibe: String,
+      colorPalette: [{ name: String, hex: String, mood: String }]
+    },
+
     status: {
       type: String,
-      enum: ['draft', 'pending_approval', 'approved', 'rejected', 'completed'],
+      enum: ['draft', 'submitted', 'under_review', 'quoted', 'approved', 'completed'],
       default: 'draft',
       index: true,
     },
+    user_id: { type: Schema.Types.ObjectId, ref: 'User' },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
