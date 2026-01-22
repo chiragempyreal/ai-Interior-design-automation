@@ -82,10 +82,10 @@ const Examples: React.FC = () => {
               <p className="font-serif text-lg text-charcoal/80 mb-10 leading-relaxed italic">
                 "Using DesignQuote AI, we visualized the light interaction with the new floor-to-ceiling glass before the first contractor arrived. The result is a sanctuary of silence and light."
               </p>
-              <button className="bg-charcoal text-white text-[10px] font-bold tracking-[0.2em] uppercase px-10 py-4 rounded-full hover:scale-105 hover:shadow-lg transition-all duration-300 flex items-center gap-3">
+              <Link to="/wizard" className="bg-charcoal text-white text-[10px] font-bold tracking-[0.2em] uppercase px-10 py-4 rounded-full hover:scale-105 hover:shadow-lg transition-all duration-300 flex items-center gap-3 w-fit">
                 View Full Project
                 <span className="material-symbols-outlined text-sm">photo_camera</span>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -106,10 +106,10 @@ const Examples: React.FC = () => {
               <p className="font-serif text-lg text-charcoal/80 mb-10 leading-relaxed italic">
                 A careful restoration project where AI helped preserve historical crown molding while integrating modern lighting solutions seamlessly into the classical architecture.
               </p>
-              <button className="bg-charcoal text-white text-[10px] font-bold tracking-[0.2em] uppercase px-10 py-4 rounded-full hover:scale-105 hover:shadow-lg transition-all duration-300 flex items-center gap-3 lg:ml-auto">
+              <Link to="/wizard" className="bg-charcoal text-white text-[10px] font-bold tracking-[0.2em] uppercase px-10 py-4 rounded-full hover:scale-105 hover:shadow-lg transition-all duration-300 flex items-center gap-3 lg:ml-auto w-fit">
                 View Full Project
                 <span className="material-symbols-outlined text-sm">add</span>
-              </button>
+              </Link>
             </div>
           </div>
         </section>
@@ -209,10 +209,10 @@ const Examples: React.FC = () => {
               <h2 className="text-5xl lg:text-7xl font-serif italic text-white mb-6 leading-tight animate-glow">Ready to Create?</h2>
               <p className="font-serif italic text-xl lg:text-2xl mb-12 text-white/90">Experience the power of AI-driven design visualization today.</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                <button className="w-full sm:w-auto bg-white text-primary text-[11px] font-bold tracking-[0.2em] uppercase px-12 py-5 rounded-full shadow-xl hover:scale-105 hover:shadow-2xl transition-all duration-300">
+                <Link to="/wizard" className="w-full sm:w-auto bg-white text-primary text-[11px] font-bold tracking-[0.2em] uppercase px-12 py-5 rounded-full shadow-xl hover:scale-105 hover:shadow-2xl transition-all duration-300 block text-center">
                   Start Project
-                </button>
-                <button className="w-full sm:w-auto border-2 border-white/50 text-white text-[11px] font-bold tracking-[0.2em] uppercase px-12 py-5 rounded-full hover:bg-white/10 hover:scale-105 transition-all duration-300">
+                </Link>
+                <button onClick={() => window.location.href = 'mailto:demo@designquote.ai'} className="w-full sm:w-auto border-2 border-white/50 text-white text-[11px] font-bold tracking-[0.2em] uppercase px-12 py-5 rounded-full hover:bg-white/10 hover:scale-105 transition-all duration-300">
                   Book a Demo
                 </button>
               </div>

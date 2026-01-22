@@ -128,7 +128,7 @@
 
   /* Buttons */
   .pill-button {
-    @apply transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] flex items-center justify-center gap-2 overflow-hidden cursor-pointer;
+    @apply transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] inline-flex items-center justify-center gap-2 overflow-hidden cursor-pointer;
   }
   
   .pill-button span.material-symbols-outlined {

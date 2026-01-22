@@ -158,10 +158,10 @@ const HowItWorks: React.FC = () => {
               <p className="text-lg text-charcoal/70 font-inter leading-relaxed mt-6 mb-6">
                 Download ultra-high-definition 8K renders, VR-ready panoramas, and the full procurement list. Your presentation is ready for the client meeting within minutes of the final click.
               </p>
-              <button className="bg-charcoal text-white font-geist text-[11px] font-bold uppercase tracking-widest px-8 py-4 rounded-full flex items-center gap-3 mt-4">
+              <Link to="/examples" className="bg-charcoal text-white font-geist text-[11px] font-bold uppercase tracking-widest px-8 py-4 rounded-full flex items-center gap-3 mt-4 w-fit">
                 View Sample Report
                 <span className="material-symbols-outlined text-sm">download</span>
-              </button>
+              </Link>
             </div>
             <div className="relative parallax-wrap">
               <div className="parallax-inner">
@@ -238,8 +238,8 @@ const HowItWorks: React.FC = () => {
               <h2 className="text-3xl md:text-6xl font-geist font-black text-white uppercase leading-tight mb-8">Ready to start your <br/> first project?</h2>
               <p className="text-white/80 max-w-xl mx-auto text-lg font-inter font-light mt-6 mb-6">Experience the future of architectural visualization today with a 7-day free trial.</p>
               <div className="flex flex-wrap justify-center gap-6 pt-4">
-                <button className="bg-white text-primary font-geist text-[11px] font-bold uppercase tracking-widest py-5 px-10 rounded-full hover:shadow-2xl hover:-translate-y-1 transition-all">Start Free Trial</button>
-                <button className="bg-charcoal text-white font-geist text-[11px] font-bold uppercase tracking-widest py-5 px-10 rounded-full hover:shadow-2xl hover:-translate-y-1 transition-all">Book a Demo</button>
+                <Link to="/wizard" className="bg-white text-primary font-geist text-[11px] font-bold uppercase tracking-widest py-5 px-10 rounded-full hover:shadow-2xl hover:-translate-y-1 transition-all">Start Free Trial</Link>
+                <button onClick={() => window.location.href = 'mailto:demo@designquote.ai'} className="bg-charcoal text-white font-geist text-[11px] font-bold uppercase tracking-widest py-5 px-10 rounded-full hover:shadow-2xl hover:-translate-y-1 transition-all">Book a Demo</button>
               </div>
             </div>
           </div>
@@ -273,14 +273,14 @@ const HowItWorks: React.FC = () => {
             <ul className="space-y-4">
               <li><a className="text-text-secondary hover:text-primary transition-colors text-sm" href="#">Documentation</a></li>
               <li><a className="text-text-secondary hover:text-primary transition-colors text-sm" href="#">API Reference</a></li>
-              <li><a className="text-text-secondary hover:text-primary transition-colors text-sm" href="#">Support Center</a></li>
+              <li><a className="text-text-secondary hover:text-primary transition-colors text-sm" href="mailto:support@designquote.ai">Support Center</a></li>
             </ul>
           </div>
           <div>
             <h4 className="font-geist text-charcoal mb-6 text-[11px] font-bold tracking-[0.15em] uppercase">LEGAL</h4>
             <ul className="space-y-4">
-              <li><a className="text-text-secondary hover:text-primary transition-colors text-sm" href="#">Privacy Policy</a></li>
-              <li><a className="text-text-secondary hover:text-primary transition-colors text-sm" href="#">Terms of Use</a></li>
+              <li><Link className="text-text-secondary hover:text-primary transition-colors text-sm" to="/privacy">Privacy Policy</Link></li>
+              <li><Link className="text-text-secondary hover:text-primary transition-colors text-sm" to="/terms">Terms of Use</Link></li>
             </ul>
           </div>
         </div>
@@ -289,9 +289,12 @@ const HowItWorks: React.FC = () => {
             © 2024 DESIGNQUOTE AI. ALL RIGHTS RESERVED.
           </p>
           <div className="flex gap-10 mt-6 md:mt-0">
-            <a className="text-charcoal/40 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined text-[20px]">public</span></a>
-            <a className="text-charcoal/40 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined text-[20px]">share</span></a>
-            <a className="text-charcoal/40 hover:text-primary transition-colors" href="#"><span className="material-symbols-outlined text-[20px]">mail</span></a>
+            <a className="text-charcoal/40 hover:text-primary transition-colors" href="https://designquote.ai" target="_blank" rel="noopener noreferrer"><span className="material-symbols-outlined text-[20px]">public</span></a>
+            <button className="text-charcoal/40 hover:text-primary transition-colors" onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              alert('Link copied to clipboard!');
+            }}><span className="material-symbols-outlined text-[20px]">share</span></button>
+            <a className="text-charcoal/40 hover:text-primary transition-colors" href="mailto:hello@designquote.ai"><span className="material-symbols-outlined text-[20px]">mail</span></a>
           </div>
         </div>
       </footer>

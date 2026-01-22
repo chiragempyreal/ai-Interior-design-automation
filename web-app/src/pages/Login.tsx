@@ -12,10 +12,21 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    if (value.length <= 10) {
+      setPhone(value);
+    }
+  };
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone) {
       setError('Please enter your mobile number');
+      return;
+    }
+    if (phone.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number');
       return;
     }
     setError('');
@@ -102,13 +113,13 @@ const Login: React.FC = () => {
                 <div className="relative">
                   <span className="absolute left-5 top-1/2 -translate-y-1/2 text-charcoal/40 font-geist text-sm">+91</span>
                   <input 
-                    className="w-full pl-14 pr-5 py-4 rounded-xl border border-border bg-background-light/20 focus:border-primary focus:ring-0 focus:outline-none transition-all placeholder:text-zinc-300 font-geist" 
-                    placeholder="9876543210" 
-                    type="tel" 
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    required
-                  />
+                  className="w-full pl-14 pr-5 py-4 rounded-xl border border-border bg-background-light/20 focus:border-primary focus:ring-0 focus:outline-none transition-all placeholder:text-zinc-300 font-geist" 
+                  placeholder="9876543210" 
+                  type="tel" 
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  required
+                />
                 </div>
               </div>
               <button 

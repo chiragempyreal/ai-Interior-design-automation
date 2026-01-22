@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronRight, ChevronLeft, Upload, Layout, 
@@ -44,6 +45,7 @@ const initialData: WizardData = {
 };
 
 const Wizard: React.FC = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [data, setData] = useState<WizardData>(initialData);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -188,7 +190,63 @@ const Wizard: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [step]);
+
   const handleNext = async () => {
+    // Validation
+    if (step === 1) {
+      if (!data.clientName.trim()) {
+        showModal('Missing Information', 'Please enter your name.', 'error');
+        return;
+      }
+      if (!data.clientEmail.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.clientEmail)) {
+        showModal('Invalid Email', 'Please enter a valid email address.', 'error');
+        return;
+      }
+      if (!data.clientPhone.trim()) {
+        showModal('Missing Information', 'Please enter your phone number.', 'error');
+        return;
+      }
+    }
+
+    if (step === 2) {
+      if (!data.propertyType) {
+        showModal('Missing Information', 'Please select a property type.', 'error');
+        return;
+      }
+      if (!data.spaceType) {
+        showModal('Missing Information', 'Please select a space type.', 'error');
+        return;
+      }
+      if (!data.area || data.area <= 0) {
+        showModal('Invalid Area', 'Please enter a valid area in sqft.', 'error');
+        return;
+      }
+      if (!data.location.city.trim()) {
+        showModal('Missing Information', 'Please enter your city.', 'error');
+        return;
+      }
+    }
+
+    if (step === 4 && !data.stylePreferences.style) {
+      showModal('Missing Information', 'Please select a style.', 'error');
+      return;
+    }
+
+    if (step === 5) {
+      if (!data.materials.flooring || !data.materials.walls) {
+        showModal('Missing Information', 'Please select flooring and wall preferences.', 'error');
+        return;
+      }
+    }
+
+    if (step === 6 && !data.timeline) {
+      showModal('Missing Information', 'Please select a timeline.', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       if (step === 1) {
@@ -218,7 +276,8 @@ const Wizard: React.FC = () => {
           clientName: data.clientName,
           clientEmail: data.clientEmail,
           clientPhone: data.clientPhone,
-          projectType: data.projectType
+          projectType: data.projectType,
+          location: data.location,
         });
         setProjectId(res.data.data._id);
       } else if (projectId && step < totalSteps) {
@@ -279,7 +338,7 @@ const Wizard: React.FC = () => {
     switch (step) {
       case 1:
         return (
-          <div className="space-y-12 animate-fade-up">
+          <div className="space-y-8 animate-fade-up">
             <div className="text-center md:text-left space-y-4">
               <span className="font-geist text-[11px] font-bold uppercase tracking-[0.4em] text-primary">Step 01</span>
               <h3 className="text-4xl md:text-5xl font-serif italic text-charcoal">Let's start with the basics</h3>
@@ -293,7 +352,10 @@ const Wizard: React.FC = () => {
                   placeholder="Your Name"
                   className="block w-full pl-14 pr-6 py-5 rounded-xl border border-charcoal/10 bg-white text-charcoal placeholder:text-charcoal/30 focus:ring-0 focus:border-primary transition-all shadow-sm hover:border-charcoal/20"
                   value={data.clientName}
-                  onChange={e => updateData('clientName', e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (/^[a-zA-Z\s]*$/.test(val)) updateData('clientName', val);
+                  }}
                 />
               </div>
               <div className="relative group">
@@ -313,7 +375,10 @@ const Wizard: React.FC = () => {
                   placeholder="Phone Number"
                   className="block w-full pl-14 pr-6 py-5 rounded-xl border border-charcoal/10 bg-white text-charcoal placeholder:text-charcoal/30 focus:ring-0 focus:border-primary transition-all shadow-sm hover:border-charcoal/20"
                   value={data.clientPhone}
-                  onChange={e => updateData('clientPhone', e.target.value)}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    if (val.length <= 10) updateData('clientPhone', val);
+                  }}
                 />
               </div>
               <div className="relative">
@@ -333,7 +398,7 @@ const Wizard: React.FC = () => {
 
       case 2:
         return (
-          <div className="space-y-12 animate-fade-up">
+          <div className="space-y-8 animate-fade-up">
             <div className="text-center md:text-left space-y-4">
               <span className="font-geist text-[11px] font-bold uppercase tracking-[0.4em] text-primary">Step 02</span>
               <h3 className="text-4xl md:text-5xl font-serif italic text-charcoal">Tell us about your space</h3>
@@ -409,7 +474,7 @@ const Wizard: React.FC = () => {
 
       case 3:
         return (
-          <div className="space-y-12 animate-fade-up">
+          <div className="space-y-8 animate-fade-up">
              <div className="text-center md:text-left space-y-4">
               <span className="font-geist text-[11px] font-bold uppercase tracking-[0.4em] text-primary">Step 03</span>
               <h3 className="text-4xl md:text-5xl font-serif italic text-charcoal">Upload Photos</h3>
@@ -489,7 +554,7 @@ const Wizard: React.FC = () => {
 
       case 4:
         return (
-          <div className="space-y-12 animate-fade-up">
+          <div className="space-y-8 animate-fade-up">
             <div className="text-center md:text-left space-y-4">
               <span className="font-geist text-[11px] font-bold uppercase tracking-[0.4em] text-primary">Step 04</span>
               <h3 className="text-4xl md:text-5xl font-serif italic text-charcoal">Choose your style</h3>
@@ -517,7 +582,7 @@ const Wizard: React.FC = () => {
 
       case 5:
         return (
-          <div className="space-y-12 animate-fade-up">
+          <div className="space-y-8 animate-fade-up">
             <div className="text-center md:text-left space-y-4">
               <span className="font-geist text-[11px] font-bold uppercase tracking-[0.4em] text-primary">Step 05</span>
               <h3 className="text-4xl md:text-5xl font-serif italic text-charcoal">Material Preferences</h3>
@@ -566,7 +631,7 @@ const Wizard: React.FC = () => {
 
       case 6:
         return (
-          <div className="space-y-12 animate-fade-up">
+          <div className="space-y-8 animate-fade-up">
              <div className="text-center md:text-left space-y-4">
               <span className="font-geist text-[11px] font-bold uppercase tracking-[0.4em] text-primary">Step 06</span>
               <h3 className="text-4xl md:text-5xl font-serif italic text-charcoal">Budget & Timeline</h3>
@@ -617,7 +682,7 @@ const Wizard: React.FC = () => {
 
       case 7:
         return (
-          <div className="space-y-12 animate-fade-up">
+          <div className="space-y-8 animate-fade-up">
             <div className="text-center md:text-left space-y-4">
               <span className="font-geist text-[11px] font-bold uppercase tracking-[0.4em] text-primary">Step 07</span>
               <h3 className="text-4xl md:text-5xl font-serif italic text-charcoal">Review your details</h3>
@@ -693,7 +758,7 @@ const Wizard: React.FC = () => {
             <div className="h-16 border-b border-charcoal/10 flex items-center justify-between px-6 bg-white shrink-0 z-20 relative">
               <div className="flex items-center space-x-4">
                 <button 
-                  onClick={() => setStep(totalSteps)}
+                  onClick={() => navigate('/')}
                   className="p-2 hover:bg-charcoal/5 rounded-full transition-colors"
                 >
                   <X className="w-5 h-5 text-charcoal" />
@@ -882,13 +947,13 @@ const Wizard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background font-sans text-charcoal">
+    <div className="flex flex-col h-screen overflow-hidden bg-background font-sans text-charcoal">
       {/* Header */}
       <Header />
 
-      <div className="flex min-h-screen pt-20">
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Desktop */}
-        <div className="hidden lg:flex w-80 flex-col fixed left-0 top-20 bottom-0 border-r border-charcoal/10 bg-white z-40">
+        <div className="hidden lg:flex w-80 flex-col border-r border-charcoal/10 bg-white z-40 shrink-0">
           <nav className="flex-1 overflow-y-auto p-6 space-y-2 mt-4">
           {[
             { id: 1, name: 'Basics', icon: User },
@@ -930,11 +995,19 @@ const Wizard: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-80 flex flex-col min-h-screen">
-        <div className="flex-1 max-w-3xl mx-auto w-full p-6 sm:p-12 md:p-16 flex flex-col justify-center">
+      <div className="flex flex-1 flex-col overflow-hidden relative min-w-0">
+        <div className="flex-1 overflow-y-auto">
+          <div className="min-h-full flex flex-col justify-center max-w-3xl mx-auto w-full p-6 sm:p-12 md:p-16">
           {/* Mobile Header */}
           <div className="lg:hidden mb-8">
-            <div className="flex justify-end items-center mb-4">
+            <div className="flex justify-between items-center mb-4">
+               <button 
+                 onClick={() => navigate('/')}
+                 className="p-2 -ml-2 text-charcoal/40 hover:text-charcoal transition-colors rounded-full hover:bg-charcoal/5"
+                 aria-label="Exit Wizard"
+               >
+                 <X className="w-5 h-5" />
+               </button>
                <span className="text-[10px] font-bold uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-charcoal/10 text-charcoal/60 font-geist">
                  {step === 8 ? 'Processing...' : `Step ${step}/${totalSteps}`}
                </span>
@@ -959,11 +1032,12 @@ const Wizard: React.FC = () => {
               {renderStep()}
             </motion.div>
           </AnimatePresence>
+          </div>
         </div>
 
         {/* Footer Navigation */}
         {step !== 8 && (
-        <div className="sticky bottom-0 bg-white/80 backdrop-blur-md border-t border-charcoal/10 p-6 sm:px-12">
+        <div className="bg-white/80 backdrop-blur-md border-t border-charcoal/10 p-6 sm:px-12 shrink-0">
           <div className="max-w-3xl mx-auto w-full flex justify-between items-center">
             <button
               onClick={() => setStep(s => Math.max(1, s - 1))}

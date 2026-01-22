@@ -335,7 +335,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onUpdate }) => {
                 </td>
                 <td className="px-6 py-3 text-right">
                   <div className="flex justify-end items-center gap-1">
-                    <span className="text-text-secondary">$</span>
+                    <span className="text-text-secondary">₹</span>
                     <input
                       type="number"
                       min="0"
@@ -347,7 +347,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onUpdate }) => {
                   </div>
                 </td>
                 <td className="px-6 py-3 text-right font-medium text-text">
-                  ${item.totalPrice.toFixed(2)}
+                  ₹{item.totalPrice.toLocaleString('en-IN')}
                 </td>
                 <td className="px-6 py-3 text-center">
                   <button
@@ -382,7 +382,7 @@ const QuoteEditor: React.FC<QuoteEditorProps> = ({ quote, onUpdate }) => {
                 Total Estimated Cost:
               </td>
               <td className="px-6 py-4 text-right text-lg text-primary">
-                ${calculateTotal().toFixed(2)}
+                ₹{calculateTotal().toLocaleString('en-IN')}
               </td>
               <td></td>
             </tr>

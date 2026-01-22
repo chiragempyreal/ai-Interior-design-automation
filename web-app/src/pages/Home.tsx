@@ -50,10 +50,10 @@ const Home: React.FC = () => {
                   Get Free Preview
                   <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </Link>
-                <button className="pill-button bg-white/50 backdrop-blur-sm border border-charcoal/10 text-charcoal font-geist text-[11px] font-bold tracking-widest uppercase py-4 px-8 rounded-full hover:bg-white">
+                {/* <button className="pill-button bg-white/50 backdrop-blur-sm border border-charcoal/10 text-charcoal font-geist text-[11px] font-bold tracking-widest uppercase py-4 px-8 rounded-full hover:bg-white">
                   Watch Demo
                   <span className="material-symbols-outlined text-sm">play_circle</span>
-                </button>
+                </button> */}
               </div>
             </div>
             

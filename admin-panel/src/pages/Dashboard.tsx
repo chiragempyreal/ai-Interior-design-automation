@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { TrendingUp, DollarSign, Briefcase, Clock, Users, CheckCircle } from 'lucide-react';
+import { TrendingUp, IndianRupee, Briefcase, Clock, Users, CheckCircle, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '@/services/api';
 import { format } from 'date-fns';
@@ -103,8 +103,8 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard 
           title="Total Revenue" 
-          value={`$${(stats.revenue.total || 0).toLocaleString()}`} 
-          icon={DollarSign} 
+          value={`₹${(stats.revenue.total || 0).toLocaleString('en-IN')}`} 
+          icon={IndianRupee} 
           color="text-success" 
           bgColor="bg-success/10"
           trend={stats.revenue.trend}

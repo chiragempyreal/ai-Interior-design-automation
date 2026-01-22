@@ -90,8 +90,8 @@ export const generateQuotePDF = async (quote: IQuote, project: IProject): Promis
           .text(item.name, 50, y)
           .text(item.category, 200, y)
           .text(item.quantity.toString(), 300, y, { width: 60, align: 'right' })
-          .text(`$${item.unitPrice.toFixed(2)}`, 370, y, { width: 70, align: 'right' })
-          .text(`$${item.totalPrice.toFixed(2)}`, 450, y, { width: 70, align: 'right' });
+          .text(`₹${item.unitPrice.toLocaleString('en-IN')}`, 370, y, { width: 70, align: 'right' })
+          .text(`₹${item.totalPrice.toLocaleString('en-IN')}`, 450, y, { width: 70, align: 'right' });
 
         totalAmount += item.totalPrice;
         y += 20;
@@ -108,7 +108,7 @@ export const generateQuotePDF = async (quote: IQuote, project: IProject): Promis
         .font('Helvetica-Bold')
         .fontSize(12)
         .text('Total Estimated Cost:', 300, y, { width: 140, align: 'right' })
-        .text(`$${totalAmount.toFixed(2)}`, 450, y, { width: 70, align: 'right' });
+        .text(`₹${totalAmount.toLocaleString('en-IN')}`, 450, y, { width: 70, align: 'right' });
 
       // --- Footer ---
       doc

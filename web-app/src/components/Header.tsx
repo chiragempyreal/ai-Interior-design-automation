@@ -38,8 +38,8 @@ const Header: React.FC = () => {
   }, [location.pathname, user]); // Re-check on route change
 
   const headerClass = isHome 
-    ? (scrolled ? 'glass-nav-scrolled bg-white/90 backdrop-blur-md border-b border-charcoal/5 shadow-sm' : 'glass-nav bg-transparent') 
-    : 'glass-nav bg-white/80 backdrop-blur-md border-b border-charcoal/5 sticky top-0';
+    ? (scrolled ? 'glass-nav-scrolled bg-white backdrop-blur-md border-b border-charcoal/5 shadow-sm' : 'glass-nav bg-white md:bg-transparent backdrop-blur-md md:backdrop-blur-none') 
+    : 'glass-nav bg-white backdrop-blur-md border-b border-charcoal/5 sticky top-0';
 
   return (
     <header 
