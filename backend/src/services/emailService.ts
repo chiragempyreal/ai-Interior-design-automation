@@ -4,12 +4,13 @@ import logger from '../utils/logger';
 // Create a transporter
 // For production, configure these in .env
 const transporter = nodemailer.createTransport({
+  service: process.env.SMTP_SERVICE, // e.g. 'gmail'
   host: process.env.SMTP_HOST || 'smtp.ethereal.email',
   port: parseInt(process.env.SMTP_PORT || '587'),
   secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
   auth: {
-    user: process.env.SMTP_USER || 'ethereal_user', // generated ethereal user
-    pass: process.env.SMTP_PASS || 'ethereal_pass', // generated ethereal password
+    user: process.env.SMTP_USER || 'ethereal_user', 
+    pass: process.env.SMTP_PASS || 'ethereal_pass', 
   },
 });
 
