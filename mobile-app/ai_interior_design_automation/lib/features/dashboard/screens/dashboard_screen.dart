@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/brand_colors.dart';
+import '../../../core/services/notification_service.dart';
 import '../../project/providers/project_provider.dart';
 import '../../project/models/project_model.dart';
 
@@ -23,6 +24,14 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      NotificationService.requestPermissions();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,24 +139,20 @@ class _HomeTab extends StatefulWidget {
   State<_HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<_HomeTab>
-    with SingleTickerProviderStateMixin {
+class _HomeTabState extends State<_HomeTab> {
   int _selectedTab = 0; // 0 = Room Decor, 1 = AI Designer
   String _selectedFilter = 'All'; // All, Residential, Commercial
   final TextEditingController _searchController = TextEditingController();
-  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     Future.microtask(() => context.read<ProjectProvider>().fetchProjects());
     _searchController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -162,18 +167,53 @@ class _HomeTabState extends State<_HomeTab>
           const SizedBox(height: 16),
           _buildToggleTabs(),
           const SizedBox(height: 16),
-          _buildSearchBar(),
-          const SizedBox(height: 16),
+          // Only show search bar on Room Decor tab
+          if (_selectedTab == 0) _buildSearchBar(),
+          if (_selectedTab == 0) const SizedBox(height: 16),
+
           Expanded(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildCameraActions(),
-                  const SizedBox(height: 24),
-                  _buildProjectsSection(),
-                  const SizedBox(height: 100),
+                  AnimatedSwitcher(
+                    duration: 300.ms,
+                    child: _selectedTab == 0
+                        ? Column(
+                            key: const ValueKey('projects'),
+                            children: [
+                              _buildProjectsSection(),
+                              const SizedBox(height: 100),
+                            ],
+                          )
+                        : Column(
+                            key: const ValueKey('ai_designer'),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 8,
+                                ),
+                                child: Text(
+                                  "Start New Design",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onBackground,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _buildCameraActions(),
+                              const SizedBox(height: 32),
+                              // Feature Highlights for AI Designer
+                              _buildAiFeaturesList(),
+                            ],
+                          ),
+                  ),
                 ],
               ),
             ),
@@ -184,37 +224,60 @@ class _HomeTabState extends State<_HomeTab>
   }
 
   Widget _buildHeader() {
-    final theme = Theme.of(context);
-    final iconColor = theme.brightness == Brightness.dark
-        ? Colors.white
-        : theme.iconTheme.color;
-
+    // iconColor removed
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          IconButton(
-            icon: Icon(Icons.menu, color: iconColor),
-            onPressed: () {},
-          ),
           Row(
             children: [
-              IconButton(
-                icon: Icon(
-                  Icons.notifications_none,
-                  size: 28,
-                  color: iconColor,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: BrandColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                onPressed: () {},
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-              const SizedBox(width: 8),
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: BrandColors.accent,
-                child: const Icon(Icons.person, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "ELITE DECORA",
+                    style: TextStyle(
+                      fontFamily: BrandTypography.primaryFont,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1,
+                      color: Theme.of(context).colorScheme.onBackground,
+                    ),
+                  ),
+                  Text(
+                    "AI INTERIOR DESIGN",
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                      color: BrandColors.primary,
+                    ),
+                  ),
+                ],
               ),
             ],
+          ),
+          CircleAvatar(
+            radius: 20,
+            backgroundImage: const NetworkImage(
+              "https://i.pravatar.cc/150?u=elite",
+            ),
+            backgroundColor: BrandColors.accent.withOpacity(0.2),
+            child: const Icon(Icons.person_outline, color: BrandColors.primary),
           ),
         ],
       ),
@@ -410,6 +473,112 @@ class _HomeTabState extends State<_HomeTab>
                   ],
                 ),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAiFeaturesList() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Why use AI Designer?",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildFeatureItem(
+            Icons.auto_fix_high,
+            "Instant Transformations",
+            "See your room in different styles in seconds.",
+            Colors.purple,
+          ),
+          _buildFeatureItem(
+            Icons.calculate_outlined,
+            "Smart Estimates",
+            "Get instant cost breakdowns for your projects.",
+            Colors.green,
+          ),
+          _buildFeatureItem(
+            Icons.style,
+            "Style Recommendations",
+            "AI suggests furniture and colors that match.",
+            Colors.orange,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(
+    IconData icon,
+    String title,
+    String description,
+    Color color,
+  ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: isDark ? Colors.white60 : Colors.black54,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

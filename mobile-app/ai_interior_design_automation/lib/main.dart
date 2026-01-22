@@ -11,6 +11,8 @@ import 'features/ai_scope/providers/scope_provider.dart';
 import 'features/estimate/providers/estimate_provider.dart';
 import 'features/cost_config/providers/cost_config_provider.dart';
 
+import 'core/services/notification_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -19,6 +21,9 @@ void main() async {
 
   // Initialize Hive for local storage
   await Hive.initFlutter();
+
+  // Initialize Notifications
+  await NotificationService.initialize();
 
   runApp(
     MultiProvider(

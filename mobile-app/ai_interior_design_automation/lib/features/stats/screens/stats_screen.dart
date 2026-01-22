@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../project/providers/project_provider.dart';
 import '../../../core/constants/brand_colors.dart';
+import '../../../core/services/notification_service.dart';
 
 class StatsScreen extends StatelessWidget {
   const StatsScreen({super.key});
@@ -35,15 +36,40 @@ class StatsScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Analytics",
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.onBackground,
-                  letterSpacing: -0.5,
-                ),
-              ).animate().fadeIn().slideX(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Analytics",
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onBackground,
+                      letterSpacing: -0.5,
+                    ),
+                  ).animate().fadeIn().slideX(),
+                  IconButton(
+                    onPressed: () {
+                      NotificationService.showNotification(
+                        title: "Weekly Summary",
+                        body: "You have 2 pending projects to review.",
+                      );
+                    },
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: theme.cardTheme.color,
+                        shape: BoxShape.circle,
+                        boxShadow: BrandShadows.light,
+                      ),
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
               Text(
                 "Overview of your design business",

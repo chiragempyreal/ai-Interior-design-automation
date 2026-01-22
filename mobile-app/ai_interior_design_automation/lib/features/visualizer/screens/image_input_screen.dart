@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/constants/brand_colors.dart';
 import '../../project/models/project_model.dart';
+import 'package:provider/provider.dart';
+import '../../project/providers/project_provider.dart';
 
 class ImageInputScreen extends StatefulWidget {
   final ProjectModel? project;
@@ -20,6 +22,7 @@ class ImageInputScreen extends StatefulWidget {
 
 class _ImageInputScreenState extends State<ImageInputScreen> {
   File? _selectedImage;
+  String? _generatedImageUrl; // Store API Result
   bool _isGenerating = false;
   final _aiPromptController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
@@ -27,8 +30,12 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-pick removed to prevent crashes on some devices.
-    // User must manually tap the Camera or Gallery button.
+    // Auto-pick logic if needed
+    if (widget.autoPickSource != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pickImage(widget.autoPickSource!);
+      });
+    }
   }
 
   Future<void> _pickImage(ImageSource source) async {
@@ -43,6 +50,7 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
       if (image != null) {
         setState(() {
           _selectedImage = File(image.path);
+          _generatedImageUrl = null; // Reset on new selection
         });
       }
     } catch (e) {
@@ -51,6 +59,10 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   }
 
   Future<void> _generateAiImage() async {
+    if (_selectedImage == null) {
+      _showError("Please upload an image first.");
+      return;
+    }
     if (_aiPromptController.text.isEmpty) {
       _showError("Please enter a description for the room.");
       return;
@@ -61,24 +73,31 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
     });
 
     try {
-      // Simulate/Call AI Generation
-      await Future.delayed(const Duration(seconds: 3));
+      // Call Real Service via Provider
+      final url = await context.read<ProjectProvider>().visualizeRoom(
+        _selectedImage!,
+        _aiPromptController.text,
+      );
 
       if (mounted) {
+        setState(() {
+          _generatedImageUrl = url;
+          _isGenerating = false;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("AI Image Generated! (Mock)"),
+            content: Text("AI Image Generated Successfully!"),
             backgroundColor: BrandColors.success,
           ),
         );
       }
     } catch (e) {
-      _showError("AI Generation failed: $e");
-    } finally {
       if (mounted) {
         setState(() {
           _isGenerating = false;
         });
+        _showError("AI Generation failed: $e");
       }
     }
   }
@@ -94,12 +113,11 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
   }
 
   void _continue() {
-    if (_selectedImage == null && !_isGenerating) {}
-
     if (widget.project != null) {
       context.push('/generate-scope', extra: widget.project);
     } else {
-      context.pop(); // Fallback
+      // Navigate to create project flow
+      context.push('/create-project');
     }
   }
 
@@ -163,7 +181,7 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
 
             const SizedBox(height: 32),
 
-            // Options Grid
+            // Options Grid (Only show if image not yet generated, or allow changing)
             Row(
               children: [
                 if (showGallery)
@@ -220,6 +238,18 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
 
   Widget _buildImagePreview() {
     final theme = Theme.of(context);
+
+    // Determine what to show: File or Network (Generated)
+    ImageProvider? imageProvider;
+    bool isGenerated = false;
+
+    if (_generatedImageUrl != null) {
+      imageProvider = NetworkImage(_generatedImageUrl!);
+      isGenerated = true;
+    } else if (_selectedImage != null) {
+      imageProvider = FileImage(_selectedImage!);
+    }
+
     return Center(
       child: Container(
         height: 280,
@@ -227,14 +257,17 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
         decoration: BoxDecoration(
           color: theme.cardTheme.color,
           boxShadow: BrandShadows.medium,
-          border: Border.all(color: theme.cardTheme.color!, width: 6),
-          image: DecorationImage(
-            image: FileImage(_selectedImage!),
-            fit: BoxFit.cover,
+          border: Border.all(
+            color: isGenerated ? BrandColors.success : theme.cardTheme.color!,
+            width: isGenerated ? 2 : 6,
           ),
+          image: imageProvider != null
+              ? DecorationImage(image: imageProvider, fit: BoxFit.cover)
+              : null,
         ),
         child: Stack(
           children: [
+            // Reset Button
             Positioned(
               top: 12,
               left: 10,
@@ -248,11 +281,46 @@ class _ImageInputScreenState extends State<ImageInputScreen> {
                     size: 20,
                   ),
                   onPressed: () {
-                    setState(() => _selectedImage = null);
+                    setState(() {
+                      _selectedImage = null;
+                      _generatedImageUrl = null;
+                    });
                   },
                 ),
               ),
             ),
+
+            // Badge for Generated
+            if (isGenerated)
+              Positioned(
+                top: 12,
+                right: 10,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: BrandColors.success,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.auto_awesome, color: Colors.white, size: 14),
+                      SizedBox(width: 4),
+                      Text(
+                        "AI GENERATED",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
           ],
         ),
       ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),

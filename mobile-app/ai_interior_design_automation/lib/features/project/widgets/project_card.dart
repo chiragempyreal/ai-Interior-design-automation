@@ -178,7 +178,39 @@ class ProjectCard extends StatelessWidget {
   }
 
   Widget _buildProjectImage() {
-    // Robust image handler
+    // Priority 1: AI Generated Preview (The user wants to see the "After" image if available)
+    if (project.aiPreviewUrl != null && project.aiPreviewUrl!.isNotEmpty) {
+      return Image.network(
+        project.aiPreviewUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _buildFallbackImage(),
+      );
+    }
+
+    // Priority 2: User Uploaded Photos
+    if (project.photoPaths.isNotEmpty) {
+      final path = project.photoPaths.first;
+      if (path.startsWith('http')) {
+        return Image.network(
+          path,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+        );
+      } else {
+        return Image.file(
+          File(path),
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildPlaceholder(),
+        );
+      }
+    }
+
+    // Fallback
+    return _buildPlaceholder();
+  }
+
+  Widget _buildFallbackImage() {
+    // If AI image fails, try original
     if (project.photoPaths.isNotEmpty) {
       final path = project.photoPaths.first;
       if (path.startsWith('http')) {

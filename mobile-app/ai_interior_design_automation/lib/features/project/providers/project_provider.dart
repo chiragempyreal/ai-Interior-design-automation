@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/project_model.dart';
@@ -124,5 +125,22 @@ class ProjectProvider extends ChangeNotifier {
       return "${(value / 100000).toStringAsFixed(1)}L";
     }
     return "${(value / 1000).toStringAsFixed(0)}k";
+  }
+
+  // Visualize Room (Ad-hoc)
+  Future<String> visualizeRoom(File image, String prompt) async {
+    _isLoading = true;
+    notifyListeners();
+    try {
+      final url = await _projectService.visualizeRoom(image, prompt);
+      _isLoading = false;
+      notifyListeners();
+      return url;
+    } catch (e) {
+      _isLoading = false;
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
   }
 }
