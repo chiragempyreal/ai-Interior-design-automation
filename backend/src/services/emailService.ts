@@ -1,5 +1,10 @@
 import nodemailer from 'nodemailer';
 import logger from '../utils/logger';
+import dotenv from 'dotenv';
+import path from 'path';
+
+const envPath = path.join(__dirname, '../../.env');
+dotenv.config({ path: envPath });
 
 // Create a transporter
 // For production, configure these in .env
