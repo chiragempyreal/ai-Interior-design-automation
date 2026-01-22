@@ -1,0 +1,4 @@
+/* Cleared for Tailwind */
+#root {
+  @apply w-full h-full;
+}
